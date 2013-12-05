@@ -47,3 +47,11 @@ Feature: Search queries
           | state        | Quebec
           | country      | Canada
           | country_code | ca
+
+    Scenario: TIGER house number
+        When searching for "3 West Victory Way, Craig"
+        Then result 1 has not attributes osm_id,osm_type
+
+    Scenario: TIGER house number (road fallback)
+        When searching for "3030 West Victory Way, Craig"
+        Then result 1 has attributes osm_id,osm_type
