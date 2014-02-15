@@ -34,7 +34,7 @@ def call():
         return
 
     data = urllib.urlencode(world.params)
-    req = urllib2.Request(url="%s/%s?%s" % (world.base_url, world.requesttype, data),
+    req = urllib2.Request(url="%s/%s?%s" % (world.config.base_url, world.requesttype, data),
                           headers=world.header)
     fd = urllib2.urlopen(req)
     page = fd.read()

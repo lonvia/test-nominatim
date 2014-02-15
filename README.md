@@ -51,3 +51,15 @@ Each scenario follows this simple sequence of steps:
      automatically send a request to the Nominatim API. The result is then
      cached and all subsequent check steps are applied to the cached result.
 
+Import Tests
+------------
+
+These tests check the import and update of the Nominatim database. They do not
+test the correctness of osm2pgsql. Each test will write some data into the `place`
+table (and optionally `the planet_osm_*` tables if required) and then run
+Nominatim's processing functions on that.
+
+These tests need to create their own test databases. By default they will be called
+test_template_nominatim and test_nominatim. Names can be changed with the environment
+variables TEMPLATE_DB and TEST_DB. The user running the tests needs superuser rights
+for postgres.

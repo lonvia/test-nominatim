@@ -11,7 +11,7 @@ from xml.dom.minidom import parseString
 @step('a HTTP (\d+) is returned')
 def send_and_check_for_error_code(step, http_code='200'):
     data = urllib.urlencode(world.params)
-    req = urllib2.Request(url="%s/%s?%s" % (world.base_url, world.requesttype, data),
+    req = urllib2.Request(url="%s/%s?%s" % (world.config.base_url, world.requesttype, data),
                           headers=world.header)
     if http_code == '200':
         fd = urllib2.urlopen(req)
