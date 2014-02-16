@@ -1,7 +1,8 @@
-Simple functional tests for the Nominatim API.
+Simple functional tests for the Nominatim API as well as import 
+and export.
 
 The tests use the lettuce framework (http://lettuce.it/) and
-nose (https://nose.readthedocs.org). They are meant to be run
+nose (https://nose.readthedocs.org). API tests are meant to be run
 against a Nominatim installation with a complete planet-wide
 setup based on a fairly recent planet. If you only have an
 excerpt, some of the tests may fail.
@@ -24,6 +25,16 @@ Usage
 
      NOMINATIM_SERVER=http://your.nominatim.instance/ lettuce features
 
+The tests can be configured with a set of environment variables:
+
+ * `NOMINATIM_SERVER` - URL of the nominatim instance (API tests)
+ * `NOMINATIM_DIR` - source directory of Nominatim (import tests)
+ * `TEMPLATE_DB` - name of template database used as a skeleton for
+                   the test databases (import tests)
+ * `TEST_DB` - name of test database (import tests)
+ * `NOMINATIM_SETTINGS` - file to write temporary Nominatim settings to (import tests)
+ * `NOMINATIM_REUSE_TEMPLATE` - if defined, the template database will not be deleted
+                                after the test runs and reused during the next run
 
 Writing Tests
 =============
@@ -32,8 +43,8 @@ The following explanation assume that the reader is familiar with the lettuce
 notations of features, scenarios and steps.
 
 
-API Tests
----------
+API Tests (`features/api`)
+--------------------------
 
 These tests are meant to test the different API calls and their parameters.
 
@@ -51,8 +62,8 @@ Each scenario follows this simple sequence of steps:
      automatically send a request to the Nominatim API. The result is then
      cached and all subsequent check steps are applied to the cached result.
 
-Import Tests
-------------
+Import Tests (`features/import`, `features/update`)
+---------------------------------------------------
 
 These tests check the import and update of the Nominatim database. They do not
 test the correctness of osm2pgsql. Each test will write some data into the `place`
