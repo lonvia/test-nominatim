@@ -10,3 +10,5 @@ Feature: Import of simple objects
         Then placex contains for N1
           | class  | type    | name
           | place  | village | 'name' : 'Foo'
+          
+

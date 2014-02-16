@@ -15,6 +15,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 @before.each_scenario
 def setup_test_database(scenario):
     if 'DB' in scenario.feature.tags:
+        world.write_nominatim_config(world.config.test_db)
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
         cur = conn.cursor()
@@ -34,11 +35,8 @@ def tear_down_test_database(scenario):
         cur.execute('DROP DATABASE %s' % (world.config.test_db,))
         conn.close()
 
-
-@step(u'the place nodes')
-def fill_place_table_nodes(step):
+def _insert_place_table_nodes(step):
     cur = world.conn.cursor()
-    cur.execute('ALTER TABLE place DISABLE TRIGGER place_before_insert')
     for line in step.hashes:
         cols = dict(line)
         cols['osm_type'] = 'N'
@@ -58,8 +56,23 @@ def fill_place_table_nodes(step):
               "ST_SetSRID(ST_Point(%f, %f), 4326)" % coords
              )
         cur.execute(query, cols.values())
-    cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     world.conn.commit()
+
+
+@step(u'the place nodes')
+def import_place_table_nodes(step):
+    cur = world.conn.cursor()
+    cur.execute('ALTER TABLE place DISABLE TRIGGER place_before_insert')
+    _insert_place_table_nodes(step)
+    cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
+    cur.close()
+    world.conn.commit()
+
+@step(u'updating the place nodes')
+def update_place_table_nodes(step):
+    world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
+    _insert_place_table_nodes(step)
+    world.run_nominatim_script('update', 'index')
 
 @step(u'importing')
 def import_database(step):
@@ -68,9 +81,10 @@ def import_database(step):
 			       housenumber, street, addr_place, isin, postcode, country_code, extratags,
 			       geometry) select * from place""")
     world.conn.commit()
+    world.run_nominatim_script('setup', 'index', 'index-noanalyse')
 
 
-@step(U'placex contains for (N|R|W)(\d+)')
+@step(u'placex contains for (N|R|W)(\d+)')
 def check_placex(step, osmtyp, osmid):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
@@ -89,4 +103,10 @@ def check_placex(step, osmtyp, osmid):
                 val = v
             assert_equals(val, dbobj[k])
         del(res[hid])
-    world.conn.commit()
+    assert_equal(len(res), 0)
+
+@step(u'placex has no entry for (N|R|W)(\d+)')
+def check_placex_missing(step, osmtyp, osmid):
+    cur = world.conn.cursor()
+    cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    assert_equals (cur.fetchone()[0], 0)

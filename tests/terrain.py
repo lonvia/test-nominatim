@@ -10,6 +10,7 @@ class NominatimConfig:
         self.template_db = os.environ.get('TEMPLATE_DB', 'test_template_nominatim')
         self.test_db = os.environ.get('TEST_DB', 'test_nominatim')
         self.local_settings_file = os.environ.get('NOMINATIM_SETTINGS', '/tmp/nominatim_settings.php')
+        self.reuse_template = 'NOMINATIM_REUSE_TEMPLATE' in os.environ
         os.environ['NOMINATIM_SETTINGS'] = '/tmp/nominatim_settings.php'
 
 
@@ -27,7 +28,6 @@ def write_nominatim_config(dbname):
 
 @world.absorb
 def run_nominatim_script(script, *args):
-    world.write_nominatim_config(world.config.template_db)
     cmd = [os.path.join(world.config.source_dir, 'utils', '%s.php' % script)]
     cmd.extend(['--%s' % x for x in args])
     proc = subprocess.Popen(cmd)

@@ -15,8 +15,18 @@ def background_template_setup():
     """ Set up a template database, containing all tables
         but not yet any functions.
     """
-    # just in case... make sure a previous table has been dropped
-    _drop_database(world.config.template_db)
+    world.write_nominatim_config(world.config.template_db)
+    if world.config.reuse_template:
+        # check that the template is there
+        conn = psycopg2.connect(database='postgres')
+        cur = conn.cursor()
+        cur.execute('select count(*) from pg_database where datname = %s', 
+                     (world.config.template_db,))
+        if cur.fetchone()[0] == 1:
+            return
+    else:
+        # just in case... make sure a previous table has been dropped
+        _drop_database(world.config.template_db)
     # call the first part of database setup
     world.run_nominatim_script('setup', 'create-db', 'setup-db')
     # remove external data to speed up indexing for tests
@@ -32,7 +42,7 @@ def background_template_setup():
     proc = subprocess.Popen([osm2pgsql, '-lsc', '-O', 'gazetteer', '-d', world.config.template_db, '-'],
     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     [outstr, errstr] = proc.communicate(input='<osm version="0.6"></osm>')
-    world.run_nominatim_script('setup', 'create-functions', 'create-tables', 'create-partition-tables', 'create-partition-functions')
+    world.run_nominatim_script('setup', 'create-functions', 'create-tables', 'create-partition-tables', 'create-partition-functions', 'load-data', 'create-search-indices')
 
 
 
@@ -42,5 +52,9 @@ def background_template_teardown(total):
         but not yet any functions.
     """
     # remove template DB
-    _drop_database(world.config.template_db)
-    os.remove(world.config.local_settings_file)
+    if not world.config.reuse_template:
+        _drop_database(world.config.template_db)
+    try:
+        os.remove(world.config.local_settings_file)
+    except OSError:
+        pass # ignore missing file
