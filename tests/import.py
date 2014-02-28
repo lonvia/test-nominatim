@@ -14,7 +14,8 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 
 @before.each_scenario
 def setup_test_database(scenario):
-    if 'DB' in scenario.feature.tags:
+    if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
+        world.db_template_setup()
         world.write_nominatim_config(world.config.test_db)
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
@@ -28,7 +29,7 @@ def setup_test_database(scenario):
 
 #@after.each_scenario
 def tear_down_test_database(scenario):
-    if 'DB' in scenario.feature.tags:
+    if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
         cur = conn.cursor()
