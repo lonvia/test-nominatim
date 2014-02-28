@@ -105,6 +105,16 @@ def search_xml_check_for_result_attribute(step, num, attrs):
         assert res.hasAttribute(attr), "Unexpected attribute '%s'" % attr
 
 
+@step('result (\d+) has rank (\d+) to (\d+)')
+def search_check_for_result_rank(step, num, low, hi):
+    step.given('at least %s xml results are returned' % num)
+    res = world.results.getElementsByTagName('place')[int(num)-1]
+    assert res.hasAttribute('place_rank'), "Attribute place_rank missing"
+    rank = int(res.getAttribute('place_rank'))
+    assert_greater_equal(rank, int(low))
+    assert_less_equal(rank, int(hi))
+
+
 @step('result (\d+) has attribute (\S+) as "(.*)"')
 def search_check_for_result_attribute(step, num, attr, value):
     step.given('at least %s results are returned' % num)

@@ -72,3 +72,39 @@ Feature: Search queries
         And parameter viewbox as "51.94,36.59,51.99,36.56"
         And parameter accept-language as "en"
         Then result 1 is in "Iran"    
+
+    Scenario: Overly large limit number for search results
+        When searching for "Neustadt"
+        And parameter limit as "1000"
+        Then at most 50 results are returned
+
+    Scenario: Limit number of search results
+        When searching for "Neustadt"
+        And parameter limit as "4"
+        Then exactly 4 results are returned
+
+    Scenario: Restrict to feature type country
+        When searching for "Monaco"
+        And parameter featureType as "country"
+        Then result 1 has rank 4 to 4
+
+    Scenario: Restrict to feature type state
+        When searching for "Berlin"
+        Then result 1 has rank 15 to 16
+        When searching for "Berlin"
+        And parameter featureType as "state"
+        Then result 1 has rank 7 to 8
+
+    Scenario: Restrict to feature type city
+        When searching for "Monaco"
+        Given parameter featureType as "city"
+        Then result 1 has rank 14 to 16
+
+
+    Scenario: Restrict to feature type settlement
+        When searching for "Everest"
+        Then name of result 1 contains "Mount Everest" 
+        When searching for "Everest"
+        Given parameter addressdetails as "1"
+        And parameter featuretype as "settlement"
+        Then result 1 has address details without "Mount Everest"
