@@ -1,4 +1,4 @@
-""" Steps for import checks.
+""" Steps for setting up imports and update
 """
 
 from nose.tools import *
@@ -84,30 +84,3 @@ def import_database(step):
     world.conn.commit()
     world.run_nominatim_script('setup', 'index', 'index-noanalyse')
 
-
-@step(u'placex contains for (N|R|W)(\d+)')
-def check_placex(step, osmtyp, osmid):
-    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    res = {}
-    for line in cur:
-        res['%s|%s' % (line['class'], line['type'])] = line
-    for line in step.hashes:
-        hid = '%s|%s' % (line['class'], line['type'])
-        assert_in (hid, res)
-        dbobj = res[hid]
-        for k,v in line.iteritems():
-            assert k in dbobj
-            if type(dbobj[k]) is dict:
-                val = world.make_hash(v)
-            else:
-                val = v
-            assert_equals(val, dbobj[k])
-        del(res[hid])
-    assert_equal(len(res), 0)
-
-@step(u'placex has no entry for (N|R|W)(\d+)')
-def check_placex_missing(step, osmtyp, osmid):
-    cur = world.conn.cursor()
-    cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    assert_equals (cur.fetchone()[0], 0)
