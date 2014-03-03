@@ -31,9 +31,9 @@ def write_nominatim_config(dbname):
 def run_nominatim_script(script, *args):
     cmd = [os.path.join(world.config.source_dir, 'utils', '%s.php' % script)]
     cmd.extend(['--%s' % x for x in args])
-    proc = subprocess.Popen(cmd)
-    proc.wait() # XXX should become communicate
-    assert (proc.returncode == 0)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (outp, outerr) = proc.communicate()
+    assert (proc.returncode == 0), "Script '%s' failed:\n%s\n%s\n" % (script, outp, outerr)
 
 @world.absorb
 def make_hash(inp):

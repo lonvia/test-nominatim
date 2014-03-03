@@ -27,8 +27,9 @@ def setup_test_database(scenario):
         psycopg2.extras.register_hstore(world.conn, globally=False, unicode=True)
 
 
-#@after.each_scenario
+@after.each_scenario
 def tear_down_test_database(scenario):
+    world.conn.close()
     if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
@@ -36,9 +37,9 @@ def tear_down_test_database(scenario):
         cur.execute('DROP DATABASE %s' % (world.config.test_db,))
         conn.close()
 
-def _insert_place_table_nodes(step):
+def _insert_place_table_nodes(places):
     cur = world.conn.cursor()
-    for line in step.hashes:
+    for line in places:
         cols = dict(line)
         cols['osm_type'] = 'N'
         if 'name' in cols:
@@ -62,17 +63,22 @@ def _insert_place_table_nodes(step):
 
 @step(u'the place nodes')
 def import_place_table_nodes(step):
+    """Insert a list of nodes into the placex table.
+       Expects a table where columns are named in the same way as placex.
+    """
     cur = world.conn.cursor()
     cur.execute('ALTER TABLE place DISABLE TRIGGER place_before_insert')
-    _insert_place_table_nodes(step)
+    _insert_place_table_nodes(step.hashes)
     cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     cur.close()
     world.conn.commit()
 
+
+
 @step(u'updating the place nodes')
 def update_place_table_nodes(step):
     world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
-    _insert_place_table_nodes(step)
+    _insert_place_table_nodes(step.hashes)
     world.run_nominatim_script('update', 'index')
 
 @step(u'importing')
