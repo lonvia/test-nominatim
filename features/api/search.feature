@@ -55,3 +55,8 @@ Feature: Search queries
     Scenario: TIGER house number (road fallback)
         When searching for "3030 West Victory Way, Craig"
         Then result 1 has attributes osm_id,osm_type
+
+    Scenario: Expansion of Illinois
+        When searching for "il, us"
+        Using language "en"
+        Then result 1 starts with "Illinois"
