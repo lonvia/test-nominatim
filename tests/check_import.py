@@ -66,3 +66,16 @@ def check_simple_query(step, query, osmtype, osmid):
     res = world.results[0]
     assert_equals(res['osm_type'], osmtype)
     assert_equals(res['osm_id'], osmid)
+
+@step(u'parent of (N|R|W)(\d+) is (N|R|W)(\d+)')
+def check_parent_placex(step, childtype, childid, parenttype, parentid):
+    cur = world.conn.cursor()
+    cur.execute("""SELECT p.osm_type, p.osm_id
+                   FROM placex p, placex c
+                   WHERE c.osm_type = %s AND c.osm_id = %s
+                    AND  p.place_id = c.parent_place_id""", (childtype, int(childid)))
+    res = cur.fetchone()
+    assert (res is not None), "Object not found or has no parent"
+    assert_equals(res[0], parenttype)
+    assert_equals(res[1], int(parentid))
+    world.conn.commit()

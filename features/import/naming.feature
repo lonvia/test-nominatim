@@ -48,3 +48,5 @@ Feature: Import and search of names
         And query "space/mountain" returns N3
         And query "space\mountain" returns N3
         And query "space(mountain)" returns N3
+
+    Scenario: Abbreviation

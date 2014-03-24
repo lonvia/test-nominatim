@@ -29,7 +29,8 @@ def setup_test_database(scenario):
 
 @after.each_scenario
 def tear_down_test_database(scenario):
-    world.conn.close()
+    if hasattr(world, 'conn'):
+        world.conn.close()
     if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
@@ -47,7 +48,7 @@ def _insert_place_table_nodes(places):
         if 'extratags' in cols:
             cols['extratags'] = world.make_hash(cols['extratags'])
         if 'geometry' in cols:
-            coords = [float(x) for x in cols['geometry'].split(',')]
+            coords = tuple([float(x) for x in cols['geometry'].split(',')])
             del(cols['geometry'])
         else:
             coords = (random.random()*360 - 180, random.random()*180 - 90)
@@ -61,24 +62,51 @@ def _insert_place_table_nodes(places):
     world.conn.commit()
 
 
-@step(u'the place nodes')
-def import_place_table_nodes(step):
+def _insert_place_table_ways(places):
+    cur = world.conn.cursor()
+    for line in places:
+        cols = dict(line)
+        cols['osm_type'] = 'W'
+        if 'name' in cols:
+            cols['name'] = world.make_hash(cols['name'])
+        if 'extratags' in cols:
+            cols['extratags'] = world.make_hash(cols['extratags'])
+        coords = cols['geometry']
+        del(cols['geometry'])
+
+        query = 'INSERT INTO place (%s, geometry) values(%s, %s)' % (
+              ','.join(cols.iterkeys()),
+              ','.join(['%s' for x in range(len(cols))]),
+              "ST_SetSRID('LINESTRING(%s)'::geometry, 4326)" % (coords,)
+             )
+        cur.execute(query, cols.values())
+    world.conn.commit()
+
+
+@step(u'the place (node|way)s')
+def import_place_table_nodes(step, osmtype):
     """Insert a list of nodes into the placex table.
        Expects a table where columns are named in the same way as placex.
     """
     cur = world.conn.cursor()
     cur.execute('ALTER TABLE place DISABLE TRIGGER place_before_insert')
-    _insert_place_table_nodes(step.hashes)
+    if osmtype == 'node':
+        _insert_place_table_nodes(step.hashes)
+    elif osmtype == 'way' :
+        _insert_place_table_ways(step.hashes)
     cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     cur.close()
     world.conn.commit()
 
 
 
-@step(u'updating the place nodes')
-def update_place_table_nodes(step):
+@step(u'updating the place (node|way)s')
+def update_place_table_nodes(step, osmtype):
     world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
-    _insert_place_table_nodes(step.hashes)
+    if osmtype == 'node':
+        _insert_place_table_nodes(step.hashes)
+    elif osmtype == 'way':
+        _insert_place_table_ways(step.hashes)
     world.run_nominatim_script('update', 'index')
 
 @step(u'importing')
