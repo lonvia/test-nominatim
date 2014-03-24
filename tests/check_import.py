@@ -38,6 +38,33 @@ def check_placex(step, osmtyp, osmid):
         del(res[hid])
     assert_equal(len(res), 0)
 
+@step(u'table placex contains as names for (N|R|W)(\d+)')
+def check_placex_names(step, osmtyp, osmid):
+    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute('SELECT name FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    for line in cur:
+        names = dict(line['name'])
+        for name in step.hashes:
+            assert_in(name['k'], names)
+            assert_equals(names[name['k']], name['v'])
+            del names[name['k']]
+        assert_equals(len(names), 0)
+
+
+@step(u"column '(\w*)' in placex contains '(\w*)' for (N|R|W)(\d+)")
+def check_column_in_placex(step, colname, colcontent, osmtyp, osmid):
+    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    for line in cur:
+        assert_equals(str(line[colname]), colcontent)
+
+@step(u"column '(\w*)' in placex contains nothing for (N|R|W)(\d+)")
+def check_column_in_placex(step, colname, osmtyp, osmid):
+    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    for line in cur:
+        assert_is_none(line[colname])
+
 @step(u'table placex has no entry for (N|R|W)(\d+)')
 def check_placex_missing(step, osmtyp, osmid):
     cur = world.conn.cursor()

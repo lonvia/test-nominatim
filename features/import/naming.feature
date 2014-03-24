@@ -27,7 +27,7 @@ Feature: Import and search of names
         And query "one two  three" returns N1
         And query "   one two three" returns N1
 
-    Scenario: Hyphens and slashes in name
+    Scenario: Special characters in name
         Given the place nodes
           | osm_id | class | type      | name
           | 1      | place | locality  | 'name' : 'Jim-Knopf-Str'
@@ -49,6 +49,69 @@ Feature: Import and search of names
         And query "space\mountain" returns N3
         And query "space(mountain)" returns N3
 
+    Scenario: No copying name tag if only one name
+        Given the place nodes
+          | osm_id | class | type      | name              | geometry
+          | 1      | place | locality  | 'name' : 'german' | 11,50
+        When importing
+        Then column 'calculated_country_code' in placex contains 'de' for N1
+        And table placex contains as names for N1
+          | k       | v
+          | name    | german
+
+    Scenario: Copying name tag to default language if it does not exist
+        Given the place nodes
+          | osm_id | class | type      | name                                     | geometry
+          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish' | 11,50
+        When importing
+        Then column 'calculated_country_code' in placex contains 'de' for N1
+        And table placex contains as names for N1
+          | k       | v
+          | name    | german
+          | name:fi | finnish
+          | name:de | german
+
+    Scenario: Copying default language name tag to name if it does not exist
+        Given the place nodes
+          | osm_id | class | type      | name                                        | geometry
+          | 1      | place | locality  | 'name:de' : 'german', 'name:fi' : 'finnish' | 11,50
+        When importing
+        Then column 'calculated_country_code' in placex contains 'de' for N1
+        And table placex contains as names for N1
+          | k       | v
+          | name    | german
+          | name:fi | finnish
+          | name:de | german
+
+    Scenario: Do not overwrite default language with name tag
+        Given the place nodes
+          | osm_id | class | type      | name                                                          | geometry
+          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish', 'name:de' : 'local' | 11,50
+        When importing
+        Then column 'calculated_country_code' in placex contains 'de' for N1
+        And table placex contains as names for N1
+          | k       | v
+          | name    | german
+          | name:fi | finnish
+          | name:de | local
+
+    Scenario: Landuse without name are ignored
+        Given the place areas
+          | osm_type | osm_id | class    | type        | geometry
+          | R        | 1      | natural  | meadow      | 0 0, 1 0, 1 1, 0 1, 0 0
+          | R        | 2      | landuse  | industrial  | 0 0, -1 0, -1 -1, 0 -1, 0 0
+        When importing
+        Then table placex has no entry for R1
+        And table placex has no entry for R2
+
+    Scenario: Landuse with name are found
+        Given the place areas
+          | osm_type | osm_id | class    | type        | name                | geometry
+          | R        | 1      | natural  | meadow      | 'name' : 'landuse1' | 0 0, 1 0, 1 1, 0 1, 0 0
+          | R        | 2      | landuse  | industrial  | 'name' : 'landuse2' | 0 0, -1 0, -1 -1, 0 -1, 0 0
+        When importing
+        Then query "landuse1" returns R1
+        And query "landuse2" returns R2
 
     Scenario: Postcode boundaries without ref
         Given the place areas
@@ -56,3 +119,4 @@ Feature: Import and search of names
           | R        | 1      | boundary | postal_code | 12345    | 0 0, 1 0, 1 1, 0 1, 0 0
         When importing
         Then query "12345" returns R1
+
