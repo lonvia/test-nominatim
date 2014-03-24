@@ -49,4 +49,10 @@ Feature: Import and search of names
         And query "space\mountain" returns N3
         And query "space(mountain)" returns N3
 
-    Scenario: Abbreviation
+
+    Scenario: Postcode boundaries without ref
+        Given the place areas
+          | osm_type | osm_id | class    | type        | postcode | geometry
+          | R        | 1      | boundary | postal_code | 12345    | 0 0, 1 0, 1 1, 0 1, 0 0
+        When importing
+        Then query "12345" returns R1

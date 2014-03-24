@@ -10,7 +10,7 @@ Feature: Update of simple objects
         Then table placex contains for N1
           | class  | type    | name
           | landuse| wood    | 'name' : 'Foo'
-        When updating the place nodes
+        When updating place nodes
           | osm_id | class   | type 
           | 1      | landuse | wood
         Then table placex has no entry for N1

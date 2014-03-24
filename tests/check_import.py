@@ -56,6 +56,10 @@ def query_cmd(query):
     world.results = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(outp)
     
     
+@step(u'query "([^"]*)" returns nothing')
+def check_simple_query(step, query):
+    world.query_cmd(query)
+    assert_equals(len(world.results), 0)
 
 
 @step(u'query "([^"]*)" returns (N|R|W)(\d+)')

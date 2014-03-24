@@ -82,8 +82,27 @@ def _insert_place_table_ways(places):
         cur.execute(query, cols.values())
     world.conn.commit()
 
+def _insert_place_table_areas(places):
+    cur = world.conn.cursor()
+    for line in places:
+        cols = dict(line)
+        if 'name' in cols:
+            cols['name'] = world.make_hash(cols['name'])
+        if 'extratags' in cols:
+            cols['extratags'] = world.make_hash(cols['extratags'])
+        coords = cols['geometry']
+        del(cols['geometry'])
 
-@step(u'the place (node|way)s')
+        query = 'INSERT INTO place (%s, geometry) values(%s, %s)' % (
+              ','.join(cols.iterkeys()),
+              ','.join(['%s' for x in range(len(cols))]),
+              "ST_SetSRID('POLYGON((%s))'::geometry, 4326)" % (coords,)
+             )
+        cur.execute(query, cols.values())
+    world.conn.commit()
+
+
+@step(u'the place (node|way|area)s')
 def import_place_table_nodes(step, osmtype):
     """Insert a list of nodes into the placex table.
        Expects a table where columns are named in the same way as placex.
@@ -94,19 +113,23 @@ def import_place_table_nodes(step, osmtype):
         _insert_place_table_nodes(step.hashes)
     elif osmtype == 'way' :
         _insert_place_table_ways(step.hashes)
+    elif osmtype == 'area' :
+        _insert_place_table_areas(step.hashes)
     cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     cur.close()
     world.conn.commit()
 
 
 
-@step(u'updating the place (node|way)s')
+@step(u'updating place (node|way|area)s')
 def update_place_table_nodes(step, osmtype):
     world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
     if osmtype == 'node':
         _insert_place_table_nodes(step.hashes)
     elif osmtype == 'way':
         _insert_place_table_ways(step.hashes)
+    elif osmtype == 'area':
+        _insert_place_table_areas(step.hashes)
     world.run_nominatim_script('update', 'index')
 
 @step(u'importing')
