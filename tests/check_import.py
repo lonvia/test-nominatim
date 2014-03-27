@@ -71,6 +71,13 @@ def check_placex_missing(step, osmtyp, osmid):
     cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
     assert_equals (cur.fetchone()[0], 0)
 
+@step(u'placex ranking for (N|R|W)(\d+) is (\d+)/(\d+)')
+def check_placex_ranking(step, osmtyp, osmid, rank_search, rank_address):
+    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute('SELECT rank_search, rank_address FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    for line in cur:
+        assert_equals(line['rank_search'], int(rank_search))
+        assert_equals(line['rank_address'], int(rank_address))
 
 
 @world.absorb
