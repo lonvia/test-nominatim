@@ -7,9 +7,9 @@ Feature: Update of simple objects
           | osm_id | class   | type  | name
           | 1      | landuse | wood  | 'name' : 'Foo'
         When importing
-        Then table placex contains for N1
-          | class  | type    | name
-          | landuse| wood    | 'name' : 'Foo'
+        Then table placex contains
+          | object | class  | type    | name
+          | N1     | landuse| wood    | 'name' : 'Foo'
         When updating place nodes
           | osm_id | class   | type 
           | 1      | landuse | wood

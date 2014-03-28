@@ -9,9 +9,9 @@ Feature: Import and search of names
           | osm_id | class | type      | name
           | 1      | place | locality  | 'name' : 'FooBar'
         When importing
-        Then table placex contains for N1
-          | class  | type     | name
-          | place  | locality | 'name' : 'FooBar'
+        Then table placex contains
+          | object | class  | type     | name
+          | N1     | place  | locality | 'name' : 'FooBar'
         And query "FooBar" returns N1
         And query "foobar" returns N1
         And query "fOObar" returns N1
@@ -54,17 +54,21 @@ Feature: Import and search of names
           | osm_id | class | type      | name              | geometry
           | 1      | place | locality  | 'name' : 'german' | 11,50
         When importing
-        Then column 'calculated_country_code' in placex contains 'de' for N1
+        Then table placex contains
+          | object | calculated_country_code |
+          | N1     | de
         And table placex contains as names for N1
-          | k       | v
-          | name    | german
+          | object | k       | v
+          | N1     | name    | german
 
     Scenario: Copying name tag to default language if it does not exist
         Given the place nodes
           | osm_id | class | type      | name                                     | geometry
           | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish' | 11,50
         When importing
-        Then column 'calculated_country_code' in placex contains 'de' for N1
+        Then table placex contains
+          | object | calculated_country_code |
+          | N1     | de
         And table placex contains as names for N1
           | k       | v
           | name    | german
@@ -76,7 +80,9 @@ Feature: Import and search of names
           | osm_id | class | type      | name                                        | geometry
           | 1      | place | locality  | 'name:de' : 'german', 'name:fi' : 'finnish' | 11,50
         When importing
-        Then column 'calculated_country_code' in placex contains 'de' for N1
+        Then table placex contains
+          | object | calculated_country_code |
+          | N1     | de
         And table placex contains as names for N1
           | k       | v
           | name    | german
@@ -88,7 +94,9 @@ Feature: Import and search of names
           | osm_id | class | type      | name                                                          | geometry
           | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish', 'name:de' : 'local' | 11,50
         When importing
-        Then column 'calculated_country_code' in placex contains 'de' for N1
+        Then table placex contains
+          | object | calculated_country_code |
+          | N1     | de
         And table placex contains as names for N1
           | k       | v
           | name    | german

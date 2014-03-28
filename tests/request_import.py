@@ -117,11 +117,11 @@ def import_place_table_nodes(step, named, osmtype):
     cur = world.conn.cursor()
     cur.execute('ALTER TABLE place DISABLE TRIGGER place_before_insert')
     if osmtype == 'node':
-        _insert_place_table_nodes(step.hashes, named is None)
+        _insert_place_table_nodes(step.hashes, named is not None)
     elif osmtype == 'way' :
-        _insert_place_table_ways(step.hashes, named is None)
+        _insert_place_table_ways(step.hashes, named is not None)
     elif osmtype == 'area' :
-        _insert_place_table_areas(step.hashes, named is None)
+        _insert_place_table_areas(step.hashes, named is not None)
     cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     cur.close()
     world.conn.commit()
@@ -132,11 +132,11 @@ def import_place_table_nodes(step, named, osmtype):
 def update_place_table_nodes(step, osmtype):
     world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
     if osmtype == 'node':
-        _insert_place_table_nodes(step.hashes)
+        _insert_place_table_nodes(step.hashes, False)
     elif osmtype == 'way':
-        _insert_place_table_ways(step.hashes)
+        _insert_place_table_ways(step.hashes, False)
     elif osmtype == 'area':
-        _insert_place_table_areas(step.hashes)
+        _insert_place_table_areas(step.hashes, False)
     world.run_nominatim_script('update', 'index')
 
 @step(u'importing')

@@ -2,28 +2,23 @@
 Feature: Import into placex
     Tests that data in placex is completed correctly.
 
-    Scenario: Country code tag available
-        Given the place nodes
-          | osm_id | class | type      | name           | country_code
-          | 1      | place | locality  | 'name' : 'foo' | de
-        When importing
-        Then column 'country_code' in placex contains 'de' for N1
-
     Scenario: No country code tag is available
         Given the place nodes
           | osm_id | class   | type     | name           | geometry
           | 1      | highway | primary  | 'name' : 'A1'  | -100,40
         When importing
-        Then column 'country_code' in placex contains nothing for N1
-        And column 'calculated_country_code' in placex contains 'us' for N1
+        Then table placex contains
+          | object | country_code | calculated_country_code |
+          | N1     | None         | us                      |
 
     Scenario: Location overwrites country code tag
         Given the place nodes
           | osm_id | class   | type     | name           | country_code | geometry
           | 1      | highway | primary  | 'name' : 'A1'  | de           | -100,40
         When importing
-        Then column 'country_code' in placex contains 'de' for N1
-        And column 'calculated_country_code' in placex contains 'us' for N1
+        Then table placex contains
+          | object | country_code | calculated_country_code |
+          | N1     | de           | us                      |
 
 
     Scenario: admin level is copied over
@@ -31,21 +26,27 @@ Feature: Import into placex
           | osm_id | class | type      | admin_level | name
           | 1      | place | state     | 3           | 'name' : 'foo'
         When importing
-        Then column 'admin_level' in placex contains '3' for N1
+        Then table placex contains
+          | object | admin_level |
+          | N1     | 3           |
 
     Scenario: admin level is default null
         Given the place nodes
           | osm_id | class   | type      | name
           | 1      | amenity | prison    | 'name' : 'foo'
         When importing
-        Then column 'admin_level' in placex contains nothing for N1
+        Then table placex contains
+          | object | admin_level |
+          | N1     | None        |
 
     Scenario: admin level is never larger than 15
         Given the place nodes
           | osm_id | class   | type      | name           | admin_level
           | 1      | amenity | prison    | 'name' : 'foo' | 16
         When importing
-        Then column 'admin_level' in placex contains '15' for N1
+        Then table placex contains
+          | object | admin_level |
+          | N1     | 15          |
 
     Scenario: postcode node without postcode is dropped
         Given the place nodes
@@ -97,34 +98,35 @@ Feature: Import into placex
           | osm_id | class     | type      | extratags               |
           | 100    | place     | locality  | 'locality' : 'townland' |
         When importing
-        Then placex ranking for N1 is 30/30
-        Then placex ranking for N11 is 30/30
-        Then placex ranking for N12 is 2/2
-        Then placex ranking for N13 is 2/0
-        Then placex ranking for N14 is 4/4
-        Then placex ranking for N15 is 8/8
-        Then placex ranking for N16 is 18/0
-        Then placex ranking for N17 is 12/12
-        Then placex ranking for N18 is 16/16
-        Then placex ranking for N19 is 17/0
-        Then placex ranking for N20 is 18/16
-        Then placex ranking for N21 is 19/16
-        Then placex ranking for N22 is 19/16
-        Then placex ranking for N23 is 19/16
-        Then placex ranking for N24 is 19/16
-        Then placex ranking for N25 is 19/16
-        Then placex ranking for N26 is 19/16
-        Then placex ranking for N27 is 20/20
-        Then placex ranking for N28 is 20/20
-        Then placex ranking for N29 is 20/20
-        Then placex ranking for N30 is 20/20
-        Then placex ranking for N31 is 20/0
-        Then placex ranking for N32 is 20/0
-        Then placex ranking for N33 is 20/0
-        Then placex ranking for N34 is 20/0
-        Then placex ranking for N100 is 20/20
-        Then placex ranking for N35 is 22/22
-        Then placex ranking for N36 is 30/30
-        Then placex ranking for N37 is 30/30
-        Then placex ranking for N38 is 28/0
-
+        Then table placex contains
+          | object | rank_search | rank_address |
+          | N1     | 30          | 30 |
+          | N11    | 30          | 30 |
+          | N12    | 2           | 2 |
+          | N13    | 2           | 0 |
+          | N14    | 4           | 4 |
+          | N15    | 8           | 8 |
+          | N16    | 18          | 0 |
+          | N17    | 12          | 12 |
+          | N18    | 16          | 16 |
+          | N19    | 17          | 0 |
+          | N20    | 18          | 16 |
+          | N21    | 19          | 16 |
+          | N22    | 19          | 16 |
+          | N23    | 19          | 16 |
+          | N24    | 19          | 16 |
+          | N25    | 19          | 16 |
+          | N26    | 19          | 16 |
+          | N27    | 20          | 20 |
+          | N28    | 20          | 20 |
+          | N29    | 20          | 20 |
+          | N30    | 20          | 20 |
+          | N31    | 20          | 0 |
+          | N32    | 20          | 0 |
+          | N33    | 20          | 0 |
+          | N34    | 20          | 0 |
+          | N100   | 20          | 20 |
+          | N35    | 22          | 22 |
+          | N36    | 30          | 30 |
+          | N37    | 30          | 30 |
+          | N38    | 28          | 0 |

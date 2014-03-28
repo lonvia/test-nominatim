@@ -14,29 +14,9 @@ import os
 import subprocess
 import random
 import json
+import re
 from collections import OrderedDict
 
-
-@step(u'table placex contains for (N|R|W)(\d+)')
-def check_placex(step, osmtyp, osmid):
-    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    res = {}
-    for line in cur:
-        res['%s|%s' % (line['class'], line['type'])] = line
-    for line in step.hashes:
-        hid = '%s|%s' % (line['class'], line['type'])
-        assert_in (hid, res)
-        dbobj = res[hid]
-        for k,v in line.iteritems():
-            assert k in dbobj
-            if type(dbobj[k]) is dict:
-                val = world.make_hash(v)
-            else:
-                val = v
-            assert_equals(val, dbobj[k])
-        del(res[hid])
-    assert_equal(len(res), 0)
 
 @step(u'table placex contains as names for (N|R|W)(\d+)')
 def check_placex_names(step, osmtyp, osmid):
@@ -51,34 +31,28 @@ def check_placex_names(step, osmtyp, osmid):
         assert_equals(len(names), 0)
 
 
-@step(u"column '(\w*)' in placex contains '(\w*)' for (N|R|W)(\d+)")
-def check_column_in_placex(step, colname, colcontent, osmtyp, osmid):
+@step(u'table placex contains$')
+def check_place_content(step):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    for line in cur:
-        assert_equals(str(line[colname]), colcontent)
-
-@step(u"column '(\w*)' in placex contains nothing for (N|R|W)(\d+)")
-def check_column_in_placex(step, colname, osmtyp, osmid):
-    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    for line in cur:
-        assert_is_none(line[colname])
+    for line in step.hashes:
+        osmobj = re.match('(N|R|W)(\d+)', line['object'])
+        cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmobj.group(1), int(osmobj.group(2))))
+        assert(cur.rowcount > 0)
+        for res in cur:
+            for k,v in line.iteritems():
+                if not k == 'object':
+                    assert_in(k, res)
+                    if type(res[k]) is dict:
+                        val = world.make_hash(v)
+                        assert_equals(res[k], val)
+                    else:
+                        assert_equals(str(res[k]), v)
 
 @step(u'table placex has no entry for (N|R|W)(\d+)')
 def check_placex_missing(step, osmtyp, osmid):
     cur = world.conn.cursor()
     cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
     assert_equals (cur.fetchone()[0], 0)
-
-@step(u'placex ranking for (N|R|W)(\d+) is (\d+)/(\d+)')
-def check_placex_ranking(step, osmtyp, osmid, rank_search, rank_address):
-    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT rank_search, rank_address FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    for line in cur:
-        assert_equals(line['rank_search'], int(rank_search))
-        assert_equals(line['rank_address'], int(rank_address))
-
 
 @world.absorb
 def query_cmd(query):

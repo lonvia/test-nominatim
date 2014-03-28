@@ -7,7 +7,7 @@ Feature: Import of simple objects
           | osm_id | class | type    | name
           | 1      | place | village | 'name' : 'Foo'
         When importing
-        Then table placex contains for N1
-          | class  | type    | name
-          | place  | village | 'name' : 'Foo'
+        Then table placex contains
+          | object | class  | type    | name
+          | N1     | place  | village | 'name' : 'Foo'
         And query "foo" returns N1
