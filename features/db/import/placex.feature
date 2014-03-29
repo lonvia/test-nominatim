@@ -48,6 +48,7 @@ Feature: Import into placex
           | object | admin_level |
           | N1     | 15          |
 
+
     Scenario: postcode node without postcode is dropped
         Given the place nodes
           | osm_id | class   | type
@@ -61,6 +62,73 @@ Feature: Import into placex
           | R        | 1      | boundary | postal_code | 0 0, 1 0, 1 1, 0 1, 0 0
         When importing
         Then table placex has no entry for R1
+
+    Scenario: search and address ranks for GB post codes correctly assigned
+        Given the place nodes
+         | osm_id  | class | type     | postcode | geometry
+         | 1       | place | postcode | E45 2CD  | -1, 53
+         | 2       | place | postcode | E45 2    | -1, 52
+         | 3       | place | postcode | Y45      | -1, 52
+        When importing
+        Then table placex contains
+         | object | postcode | calculated_country_code | rank_search | rank_address
+         | N1     | E45 2CD  | gb                      | 25          | 5
+         | N2     | E45 2    | gb                      | 23          | 5
+         | N3     | Y45      | gb                      | 21          | 5
+
+    Scenario: wrongly formatted GB postcodes are down-ranked
+        Given the place nodes
+         | osm_id  | class | type     | postcode | geometry
+         | 1       | place | postcode | EA452CD  | -1, 53
+         | 2       | place | postcode | E45 23   | -1, 52
+         | 3       | place | postcode | y45      | -1, 52
+        When importing
+        Then table placex contains
+         | object | calculated_country_code | rank_search | rank_address
+         | N1     | gb                      | 30          | 30
+         | N2     | gb                      | 30          | 30
+         | N3     | gb                      | 30          | 30
+
+    Scenario: search and address rank for DE postcodes correctly assigned
+        Given the place nodes
+         | osm_id  | class | type     | postcode | geometry
+         | 1       | place | postcode | 56427    | 10, 52
+         | 2       | place | postcode | 5642     | 10, 52
+         | 3       | place | postcode | 5642A    | 10, 52
+         | 4       | place | postcode | 564276   | 10, 52
+        When importing
+        Then table placex contains
+         | object | calculated_country_code | rank_search | rank_address
+         | N1     | de                      | 21          | 11
+         | N2     | de                      | 30          | 30
+         | N3     | de                      | 30          | 30
+         | N4     | de                      | 30          | 30
+
+    Scenario: search and address rank for other postcodes are correctly assigned
+        Given the place nodes
+         | osm_id  | class | type     | postcode | geometry
+         | 1       | place | postcode | 1        | -100, 52
+         | 2       | place | postcode | X3       | -100, 52
+         | 3       | place | postcode | 543      | -100, 52
+         | 4       | place | postcode | 54dc     | -100, 52
+         | 5       | place | postcode | 12345    | -100, 52
+         | 6       | place | postcode | 55TT667  | -100, 52
+         | 7       | place | postcode | 123-65   | -100, 52
+         | 8       | place | postcode | 12 445 4 | -100, 52
+         | 9       | place | postcode | A1:bc10  | -100, 52
+        When importing
+        Then table placex contains
+         | object | calculated_country_code | rank_search | rank_address
+         | N1     | ca                      | 21          | 11
+         | N2     | ca                      | 21          | 11
+         | N3     | ca                      | 21          | 11
+         | N4     | ca                      | 21          | 11
+         | N5     | ca                      | 21          | 11
+         | N6     | ca                      | 21          | 11
+         | N7     | ca                      | 25          | 11
+         | N8     | ca                      | 25          | 11
+         | N9     | ca                      | 25          | 11
+
 
     Scenario: search and address ranks for places are correctly assigned
         Given the named place nodes

@@ -130,7 +130,7 @@ def import_place_table_nodes(step, named, osmtype):
 
 @step(u'updating place (node|way|area)s')
 def update_place_table_nodes(step, osmtype):
-    world.run_nominatim_script('setup', 'create-functions', 'enable-diff-updates')
+    world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')
     if osmtype == 'node':
         _insert_place_table_nodes(step.hashes, False)
     elif osmtype == 'way':
@@ -141,6 +141,7 @@ def update_place_table_nodes(step, osmtype):
 
 @step(u'importing')
 def import_database(step):
+    world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions')
     cur = world.conn.cursor()
     cur.execute("""insert into placex (osm_type, osm_id, class, type, name, admin_level,
 			       housenumber, street, addr_place, isin, postcode, country_code, extratags,
