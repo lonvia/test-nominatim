@@ -1,6 +1,6 @@
 @DB
 Feature: Update of names in place objects
-    Test all naming relatied issues in updates
+    Test all naming related issues in updates
 
 
     Scenario: Updating postcode in postcode boundaries without ref
