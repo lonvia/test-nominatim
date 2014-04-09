@@ -2,6 +2,7 @@ from lettuce import *
 import os
 import subprocess
 import psycopg2
+from shapely.wkt import loads as wkt_load
 
 class NominatimConfig:
 
@@ -13,6 +14,10 @@ class NominatimConfig:
         self.local_settings_file = os.environ.get('NOMINATIM_SETTINGS', '/tmp/nominatim_settings.php')
         self.reuse_template = 'NOMINATIM_REUSE_TEMPLATE' in os.environ
         os.environ['NOMINATIM_SETTINGS'] = '/tmp/nominatim_settings.php'
+
+        scriptpath = os.path.dirname(os.path.abspath(__file__))
+        self.scenario_path = os.environ.get('SCENARIO_PATH', 
+                os.path.join(scriptpath, '..', 'scenarios', 'data'))
 
 
     def __str__(self):
@@ -104,3 +109,43 @@ def db_template_teardown(total):
             os.remove(world.config.local_settings_file)
         except OSError:
             pass # ignore missing file
+
+
+##########################################################################
+#
+# Data scenario handling
+#
+
+world.scenarios = {}
+world.current_scenario = None
+
+@world.absorb
+def load_scenario(name):
+    if name in world.scenarios:
+        world.current_scenario = world.scenarios[name]
+    else:
+        with open(os.path.join(world.config.scenario_path, "%s.wkt" % name), 'r') as fd:
+            scene = {}
+            for line in fd:
+                if line.strip():
+                    obj, wkt = line.split('|', 2)
+                    wkt = wkt.strip()
+                    scene[obj.strip()] = wkt_load(wkt)
+            world.scenarios[name] = scene
+            world.current_scenario = scene
+
+@world.absorb
+def get_scenario_geometry(name):
+    if not ':' in name:
+        # Not a scenario description
+        return None
+
+    if name.startswith(':'):
+        return world.current_scenario[name[1:]]
+    else:
+        scene, obj = name.split(':', 2)
+        oldscene = world.current_scenario
+        world.load_scenario(scene)
+        wkt = world.current_scenario[obj]
+        world.current_scenario = oldscene
+        return wkt

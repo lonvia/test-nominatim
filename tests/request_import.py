@@ -51,15 +51,25 @@ def _insert_place_table_nodes(places, force_name):
         if 'extratags' in cols:
             cols['extratags'] = world.make_hash(cols['extratags'])
         if 'geometry' in cols:
-            coords = tuple([float(x) for x in cols['geometry'].split(',')])
+            coords = world.get_scenario_geometry(cols['geometry'])
+            if coords is None:
+                coords = "ST_Point(%f, %f)" % tuple([float(x) for x in cols['geometry'].split(',')])
+            else:
+                coords = "'%s'::geometry" % coords.wkt
             del(cols['geometry'])
         else:
-            coords = (random.random()*360 - 180, random.random()*180 - 90)
+            coords = "ST_Point(%f, %f)" % (random.random()*360 - 180, random.random()*180 - 90)
+        print coords
+        print 'a'
+        print 'a'
+        print 'a'
+        print 'a'
+        print 'a'
 
-        query = 'INSERT INTO place (%s, geometry) values(%s, %s)' % (
+        query = 'INSERT INTO place (%s,geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
               ','.join(['%s' for x in range(len(cols))]),
-              "ST_SetSRID(ST_Point(%f, %f), 4326)" % coords
+              coords
              )
         cur.execute(query, cols.values())
     world.conn.commit()
@@ -108,6 +118,9 @@ def _insert_place_table_areas(places, force_name):
         cur.execute(query, cols.values())
     world.conn.commit()
 
+@step(u'the scenario (.*)')
+def import_set_scenario(step, scenario):
+    world.load_scenario(scenario)
 
 @step(u'the (named )?place (node|way|area)s')
 def import_place_table_nodes(step, named, osmtype):

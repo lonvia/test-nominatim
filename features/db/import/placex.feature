@@ -5,16 +5,17 @@ Feature: Import into placex
     Scenario: No country code tag is available
         Given the place nodes
           | osm_id | class   | type     | name           | geometry
-          | 1      | highway | primary  | 'name' : 'A1'  | -100,40
+          | 1      | highway | primary  | 'name' : 'A1'  | country:us
         When importing
         Then table placex contains
           | object | country_code | calculated_country_code |
           | N1     | None         | us                      |
 
     Scenario: Location overwrites country code tag
-        Given the place nodes
+        Given the scenario country
+        And the place nodes
           | osm_id | class   | type     | name           | country_code | geometry
-          | 1      | highway | primary  | 'name' : 'A1'  | de           | -100,40
+          | 1      | highway | primary  | 'name' : 'A1'  | de           | :us
         When importing
         Then table placex contains
           | object | country_code | calculated_country_code |
