@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' upload='false' generator='JOSM'>
+  <node id='-28' action='modify' visible='true' lat='2.000106382833144' lon='1.0006397712842492'>
+    <tag k='test:id' v='p-S2' />
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-27' action='modify' visible='true' lat='2.0005287773329004' lon='1.0005321393958087'>
+    <tag k='test:id' v='p-N1' />
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-26' action='modify' visible='true' lat='2.000292656197374' lon='1.0008104072049482'>
+    <tag k='test:id' v='p-S1' />
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-25' action='modify' visible='true' lat='2.000339880427198' lon='1.000390380323228'>
+    <tag k='test:id' v='p-N2' />
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-23' action='modify' visible='true' lat='2.000219196281612' lon='1.0010676736700022'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-21' action='modify' visible='true' lat='2.000198207733647' lon='1.000721151492583'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-20' action='modify' visible='true' lat='2.000190337028091' lon='1.0001383641941959'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-18' action='modify' visible='true' lat='2.0005418951727663' lon='1.0010624233339804'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-16' action='modify' visible='true' lat='2.0004579409958114' lon='1.0006607726283354'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-14' action='modify' visible='true' lat='2.000397598928471' lon='1.0004297578433892'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='-13' action='modify' visible='true' lat='2.0004054696330322' lon='1.0001173628501097'>
+    <tag k='test:section' v='roads-with-pois' />
+  </node>
+  <node id='100000' timestamp='2014-01-01T00:00:00Z' uid='1' user='test' visible='true' version='1' changeset='1' lat='2.0' lon='1.0' />
+  <node id='100001' timestamp='2014-01-01T00:00:00Z' uid='1' user='test' visible='true' version='1' changeset='1' lat='3.0' lon='1.0' />
+  <node id='100002' timestamp='2014-01-01T00:00:00Z' uid='1' user='test' visible='true' version='1' changeset='1' lat='3.0' lon='2.0' />
+  <node id='100003' timestamp='2014-01-01T00:00:00Z' uid='1' user='test' visible='true' version='1' changeset='1' lat='2.0' lon='2.0' />
+  <way id='-22' action='modify' visible='true'>
+    <nd ref='-20' />
+    <nd ref='-21' />
+    <nd ref='-23' />
+    <tag k='test:id' v='w-south' />
+    <tag k='test:section' v='roads-with-pois' />
+  </way>
+  <way id='-15' action='modify' visible='true'>
+    <nd ref='-13' />
+    <nd ref='-14' />
+    <nd ref='-16' />
+    <nd ref='-18' />
+    <tag k='test:id' v='w-north' />
+    <tag k='test:section' v='roads-with-pois' />
+  </way>
+  <way id='100000' timestamp='2014-01-01T00:00:00Z' uid='1' user='test' visible='true' version='1' changeset='1'>
+    <nd ref='100000' />
+    <nd ref='100001' />
+    <nd ref='100002' />
+    <nd ref='100003' />
+    <nd ref='100000' />
+    <tag k='note' v='test area, do not leave' />
+  </way>
+</osm>

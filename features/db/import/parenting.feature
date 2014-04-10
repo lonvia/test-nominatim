@@ -4,24 +4,32 @@ Feature: Parenting of objects
 
 
     Scenario: Address without addr tags
-        Given the place nodes
+        Given the scenario roads-with-pois
+        And the place nodes
          | osm_id | class | type  | geometry
-         | 1      | place | house | 0.0001,0.00001
+         | 1      | place | house | :p-N1
         And the place ways
          | osm_id | class   | type        | name           | geometry
-         | 1      | highway | residential | 'name' : 'foo' | 0 0, 1 0
+         | 1      | highway | residential | 'name' : 'foo' | :w-north
         When importing
         Then parent of N1 is W1
 
 
     Scenario: Address without tags, closest street
-        Given the place nodes
+        Given the scenario roads-with-pois
+        And the place nodes
          | osm_id | class | type  | geometry
-         | 1      | place | house | 0.0001,0.0001
+         | 1      | place | house | :p-N1
+         | 2      | place | house | :p-N2
+         | 3      | place | house | :p-S1
+         | 4      | place | house | :p-S2
         And the place ways
          | osm_id | class   | type        | name           | geometry
-         | 1      | highway | residential | 'name' : 'foo' | 0 0, 1 0
-         | 2      | highway | residential | 'name' : 'foobar' | 0 0.00005, 1 0.00005
+         | 1      | highway | residential | 'name' : 'foo' | :w-north
+         | 2      | highway | residential | 'name' : 'foobar' | :w-south
         When importing
-        Then parent of N1 is W2
+        Then parent of N1 is W1
+        And parent of N2 is W1
+        And parent of N3 is W2
+        And parent of N4 is W2
 

@@ -59,12 +59,6 @@ def _insert_place_table_nodes(places, force_name):
             del(cols['geometry'])
         else:
             coords = "ST_Point(%f, %f)" % (random.random()*360 - 180, random.random()*180 - 90)
-        print coords
-        print 'a'
-        print 'a'
-        print 'a'
-        print 'a'
-        print 'a'
 
         query = 'INSERT INTO place (%s,geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
@@ -86,13 +80,17 @@ def _insert_place_table_ways(places, force_name):
             cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
         if 'extratags' in cols:
             cols['extratags'] = world.make_hash(cols['extratags'])
-        coords = cols['geometry']
+        coords = world.get_scenario_geometry(cols['geometry'])
+        if coords is None:
+            coords = "'LINESTRING(%s)'::geometry" % cols['geometry']
+        else:
+            coords = "'%s'::geometry" % coords.wkt
         del(cols['geometry'])
 
-        query = 'INSERT INTO place (%s, geometry) values(%s, %s)' % (
+        query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
               ','.join(['%s' for x in range(len(cols))]),
-              "ST_SetSRID('LINESTRING(%s)'::geometry, 4326)" % (coords,)
+              coords
              )
         cur.execute(query, cols.values())
     world.conn.commit()
@@ -107,13 +105,16 @@ def _insert_place_table_areas(places, force_name):
             cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
         if 'extratags' in cols:
             cols['extratags'] = world.make_hash(cols['extratags'])
-        coords = cols['geometry']
+        if coords is None:
+            coords = "'POLYGON(%s)'::geometry" % cols['geometry']
+        else:
+            coords = "'%s'::geometry" % coords.wkt
         del(cols['geometry'])
 
-        query = 'INSERT INTO place (%s, geometry) values(%s, %s)' % (
+        query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
               ','.join(['%s' for x in range(len(cols))]),
-              "ST_SetSRID('POLYGON((%s))'::geometry, 4326)" % (coords,)
+              coords
              )
         cur.execute(query, cols.values())
     world.conn.commit()
