@@ -21,6 +21,25 @@ Feature: Import into placex
           | object | country_code | calculated_country_code |
           | N1     | de           | us                      |
 
+    Scenario: Country code tag overwrites location for countries
+        Given the scenario country
+        And the place areas
+          | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
+          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | de           | -100 40, -101 40, -101 41, -100 41, -100 40
+        When importing
+        Then table placex contains
+          | object | country_code | calculated_country_code |
+          | R1     | de           | de                      |
+
+    Scenario: Illegal country code tag for countries is ignored
+        Given the scenario country
+        And the place areas
+          | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
+          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | xx          | -100 40, -101 40, -101 41, -100 41, -100 40
+        When importing
+        Then table placex contains
+          | object | country_code | calculated_country_code |
+          | R1     | xx           | us                      |
 
     Scenario: admin level is copied over
         Given the place nodes

@@ -105,8 +105,9 @@ def _insert_place_table_areas(places, force_name):
             cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
         if 'extratags' in cols:
             cols['extratags'] = world.make_hash(cols['extratags'])
+        coords = world.get_scenario_geometry(cols['geometry'])
         if coords is None:
-            coords = "'POLYGON(%s)'::geometry" % cols['geometry']
+            coords = "'POLYGON((%s))'::geometry" % cols['geometry']
         else:
             coords = "'%s'::geometry" % coords.wkt
         del(cols['geometry'])

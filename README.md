@@ -62,7 +62,7 @@ Each scenario follows this simple sequence of steps:
      automatically send a request to the Nominatim API. The result is then
      cached and all subsequent check steps are applied to the cached result.
 
-Import Tests (`features/import`, `features/update`)
+Import Tests (`features/db`)
 ---------------------------------------------------
 
 These tests check the import and update of the Nominatim database. They do not
