@@ -17,8 +17,8 @@ class NominatimConfig:
         os.environ['NOMINATIM_SETTINGS'] = '/tmp/nominatim_settings.php'
 
         scriptpath = os.path.dirname(os.path.abspath(__file__))
-        self.scenario_path = os.environ.get('SCENARIO_PATH', 
-                os.path.join(scriptpath, '..', 'scenarios', 'data'))
+        self.scene_path = os.environ.get('SCENE_PATH', 
+                os.path.join(scriptpath, '..', 'scenes', 'data'))
 
 
     def __str__(self):
@@ -59,6 +59,22 @@ def split_id(oid):
         return (osmtype, int(osmid), cls)
     else:
         return (osmtype, int(oid[1:]), None)
+
+@world.absorb
+def get_placeid(oid):
+    """ Tries to retrive the place_id for a unique identifier. """
+    osmtype, osmid, cls = world.split_id(oid)
+    cur = world.conn.cursor()
+    if cls is None:
+        q = 'SELECT place_id FROM placex where osm_type = %s and osm_id = %s'
+        params = (osmtype, osmid)
+    else:
+        q = 'SELECT place_id FROM placex where osm_type = %s and osm_id = %s and class = %s'
+        params = (osmtype, osmid, cls)
+    cur.execute(q, params)
+    assert_equals (cur.rowcount, 1)
+    return cur.fetchone()[0]
+
 
 @world.absorb
 def db_dump_table(table):
@@ -137,39 +153,39 @@ def db_template_teardown(total):
 
 ##########################################################################
 #
-# Data scenario handling
+# Data scene handling
 #
 
-world.scenarios = {}
-world.current_scenario = None
+world.scenes = {}
+world.current_scene = None
 
 @world.absorb
-def load_scenario(name):
-    if name in world.scenarios:
-        world.current_scenario = world.scenarios[name]
+def load_scene(name):
+    if name in world.scenes:
+        world.current_scene = world.scenes[name]
     else:
-        with open(os.path.join(world.config.scenario_path, "%s.wkt" % name), 'r') as fd:
+        with open(os.path.join(world.config.scene_path, "%s.wkt" % name), 'r') as fd:
             scene = {}
             for line in fd:
                 if line.strip():
                     obj, wkt = line.split('|', 2)
                     wkt = wkt.strip()
                     scene[obj.strip()] = wkt_load(wkt)
-            world.scenarios[name] = scene
-            world.current_scenario = scene
+            world.scenes[name] = scene
+            world.current_scene = scene
 
 @world.absorb
-def get_scenario_geometry(name):
+def get_scene_geometry(name):
     if not ':' in name:
-        # Not a scenario description
+        # Not a scene description
         return None
 
     if name.startswith(':'):
-        return world.current_scenario[name[1:]]
+        return world.current_scene[name[1:]]
     else:
         scene, obj = name.split(':', 2)
-        oldscene = world.current_scenario
-        world.load_scenario(scene)
-        wkt = world.current_scenario[obj]
-        world.current_scenario = oldscene
+        oldscene = world.current_scene
+        world.load_scene(scene)
+        wkt = world.current_scene[obj]
+        world.current_scene = oldscene
         return wkt

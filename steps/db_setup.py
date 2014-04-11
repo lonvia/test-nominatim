@@ -1,4 +1,17 @@
-""" Steps for setting up imports and update
+""" Steps for setting up a test database with imports and updates.
+
+    There are two ways to state geometries for test data: with coordinates
+    and via scenes.
+
+    Coordinates should be given as a wkt without the enclosing type name.
+
+    Scenes are prepared geometries which can be found in the scenes/data/
+    directory. Each scene is saved in a .wkt file with its name, which
+    contains a list of id/wkt pairs. A scene can be set globally
+    for a scene by using the step `the scene <scene name>`. Then each
+    object should be refered to as `:<object id>`. A geometry can also
+    be referred to without loading the scene by explicitly stating the
+    scene: `<scene name>:<object id>`.
 """
 
 from nose.tools import *
@@ -15,6 +28,10 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 
 @before.each_scenario
 def setup_test_database(scenario):
+    """ Creates a new test database from the template database
+        that was set up earlier in terrain.py. Will be done only
+        for scenarios whose feature is tagged with 'DB'.
+    """
     if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
         world.db_template_setup()
         world.write_nominatim_config(world.config.test_db)
@@ -30,6 +47,8 @@ def setup_test_database(scenario):
 
 @after.each_scenario
 def tear_down_test_database(scenario):
+    """ Drops any previously created test database.
+    """
     if hasattr(world, 'conn'):
         world.conn.close()
     if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
@@ -50,7 +69,7 @@ def _format_placex_cols(cols, geomtype, force_name):
     if 'admin_level' not in cols:
         cols['admin_level'] = 100
     if 'geometry' in cols:
-        coords = world.get_scenario_geometry(cols['geometry'])
+        coords = world.get_scene_geometry(cols['geometry'])
         if coords is None:
             coords = "'%s(%s)'::geometry" % (geomtype, cols['geometry'])
         else:
@@ -78,12 +97,13 @@ def _insert_place_table_nodes(places, force_name):
     world.conn.commit()
 
 
-def _insert_place_table_ways(places, force_name):
+def _insert_place_table_objects(places, geomtype, force_name):
     cur = world.conn.cursor()
     for line in places:
         cols = dict(line)
-        cols['osm_type'] = 'W'
-        _format_placex_cols(cols, 'LINESTRING', force_name)
+        if 'osm_type' not in cols:
+            cols['osm_type'] = 'W'
+        _format_placex_cols(cols, geomtype, force_name)
         coords = cols.pop('geometry')
 
         query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
@@ -94,24 +114,9 @@ def _insert_place_table_ways(places, force_name):
         cur.execute(query, cols.values())
     world.conn.commit()
 
-def _insert_place_table_areas(places, force_name):
-    cur = world.conn.cursor()
-    for line in places:
-        cols = dict(line)
-        _format_placex_cols(cols, 'POLYGON', force_name)
-        coords = cols.pop('geometry')
-
-        query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
-              ','.join(cols.iterkeys()),
-              ','.join(['%s' for x in range(len(cols))]),
-              coords
-             )
-        cur.execute(query, cols.values())
-    world.conn.commit()
-
-@step(u'the scenario (.*)')
-def import_set_scenario(step, scenario):
-    world.load_scenario(scenario)
+@step(u'the scene (.*)')
+def import_set_scene(step, scene):
+    world.load_scene(scene)
 
 @step(u'the (named )?place (node|way|area)s')
 def import_place_table_nodes(step, named, osmtype):
@@ -123,29 +128,17 @@ def import_place_table_nodes(step, named, osmtype):
     if osmtype == 'node':
         _insert_place_table_nodes(step.hashes, named is not None)
     elif osmtype == 'way' :
-        _insert_place_table_ways(step.hashes, named is not None)
+        _insert_place_table_objects(step.hashes, 'LINESTRING', named is not None)
     elif osmtype == 'area' :
-        _insert_place_table_areas(step.hashes, named is not None)
+        _insert_place_table_objects(step.hashes, 'POLYGON', named is not None)
     cur.execute('ALTER TABLE place ENABLE TRIGGER place_before_insert')
     cur.close()
     world.conn.commit()
 
 
-
-@step(u'updating place (node|way|area)s')
-def update_place_table_nodes(step, osmtype):
-    world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')
-    if osmtype == 'node':
-        _insert_place_table_nodes(step.hashes, False)
-    elif osmtype == 'way':
-        _insert_place_table_ways(step.hashes, False)
-    elif osmtype == 'area':
-        _insert_place_table_areas(step.hashes, False)
-    world.run_nominatim_script('update', 'index')
-
-
 @step(u'importing')
 def import_database(step):
+    """ Runs the actual indexing. """
     world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions')
     cur = world.conn.cursor()
     cur.execute("""insert into placex (osm_type, osm_id, class, type, name, admin_level,
@@ -155,8 +148,24 @@ def import_database(step):
     world.run_nominatim_script('setup', 'index', 'index-noanalyse')
     #world.db_dump_table('placex')
 
+
+@step(u'updating place (node|way|area)s')
+def update_place_table_nodes(step, osmtype):
+    """ Replace a geometry in place by reinsertion and reindex database.
+    """
+    world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')
+    if osmtype == 'node':
+        _insert_place_table_nodes(step.hashes, False)
+    elif osmtype == 'way':
+        _insert_place_table_objects(step.hashes, 'LINESTRING', False)
+    elif osmtype == 'area':
+        _insert_place_table_objects(step.hashes, 'POLYGON', False)
+    world.run_nominatim_script('update', 'index')
+
 @step(u'marking for delete (.*)')
 def update_delete_places(step, places):
+    """ Remove an entry from place and reindex database.
+    """
     world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')
     cur = world.conn.cursor()
     for place in places.split(','):

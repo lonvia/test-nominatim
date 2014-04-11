@@ -12,7 +12,7 @@ Feature: Import into placex
           | N1     | None         | us                      |
 
     Scenario: Location overwrites country code tag
-        Given the scenario country
+        Given the scene country
         And the place nodes
           | osm_id | class   | type     | name           | country_code | geometry
           | 1      | highway | primary  | 'name' : 'A1'  | de           | :us
@@ -22,8 +22,7 @@ Feature: Import into placex
           | N1     | de           | us                      |
 
     Scenario: Country code tag overwrites location for countries
-        Given the scenario country
-        And the place areas
+        Given the place areas
           | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
           | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | de           | (-100 40, -101 40, -101 41, -100 41, -100 40)
         When importing
@@ -32,7 +31,6 @@ Feature: Import into placex
           | R1     | de           | de                      |
 
     Scenario: Illegal country code tag for countries is ignored
-        Given the scenario country
         And the place areas
           | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
           | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | xx          | (-100 40, -101 40, -101 41, -100 41, -100 40)

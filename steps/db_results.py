@@ -1,4 +1,4 @@
-""" Steps for checking results of import and update tests.
+""" Steps for checking the DB after import and update tests.
 
     There are two groups of test here. The first group tests
     the contents of db tables directly, the second checks
@@ -20,6 +20,8 @@ from collections import OrderedDict
 
 @step(u'table placex contains as names for (N|R|W)(\d+)')
 def check_placex_names(step, osmtyp, osmid):
+    """ Check for the exact content of the name hstaore in placex.
+    """
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute('SELECT name FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
     for line in cur:
@@ -35,8 +37,14 @@ def check_placex_names(step, osmtyp, osmid):
 def check_place_content(step):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
-        osmobj = re.match('(N|R|W)(\d+)', line['object'])
-        cur.execute('SELECT * FROM placex where osm_type = %s and osm_id =%s', (osmobj.group(1), int(osmobj.group(2))))
+        osmtype, osmid, cls = world.split_id(line['object'])
+        if cls is None:
+            q = 'SELECT * FROM placex where osm_type = %s and osm_id = %s'
+            params = (osmtype, osmid)
+        else:
+            q = 'SELECT * FROM placex where osm_type = %s and osm_id = %s and class = %s'
+            params = (osmtype, osmid, cls)
+        cur.execute(q, params)
         assert(cur.rowcount > 0)
         for res in cur:
             for k,v in line.iteritems():
@@ -45,6 +53,9 @@ def check_place_content(step):
                     if type(res[k]) is dict:
                         val = world.make_hash(v)
                         assert_equals(res[k], val)
+                    elif k in ('parent_place_id', 'linked_place_id'):
+                        pid = world.get_placeid(v)
+                        assert_equals(pid, res[k])
                     else:
                         assert_equals(str(res[k]), v)
 
@@ -55,8 +66,8 @@ def check_placex_missing(step, osmtyp, osmid):
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 
-@world.absorb
-def query_cmd(query):
+@step(u'sending query "(.*)"$')
+def query_cmd(step, query):
     cmd = [os.path.join(world.config.source_dir, 'utils', 'query.php'),
            '--search', query]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -67,28 +78,16 @@ def query_cmd(query):
     
 @step(u'query "([^"]*)" returns nothing')
 def check_simple_query(step, query):
-    world.query_cmd(query)
+    query_cmd(step, query)
     assert_equals(len(world.results), 0)
 
 
 @step(u'query "([^"]*)" returns (N|R|W)(\d+)')
 def check_simple_query(step, query, osmtype, osmid):
-    world.query_cmd(query)
+    query_cmd(step, query)
     assert_equals(len(world.results), 1)
 
     res = world.results[0]
     assert_equals(res['osm_type'], osmtype)
     assert_equals(res['osm_id'], osmid)
 
-@step(u'parent of (N|R|W)(\d+) is (N|R|W)(\d+)')
-def check_parent_placex(step, childtype, childid, parenttype, parentid):
-    cur = world.conn.cursor()
-    cur.execute("""SELECT p.osm_type, p.osm_id
-                   FROM placex p, placex c
-                   WHERE c.osm_type = %s AND c.osm_id = %s
-                    AND  p.place_id = c.parent_place_id""", (childtype, int(childid)))
-    res = cur.fetchone()
-    assert (res is not None), "Object not found or has no parent"
-    assert_equals(res[0], parenttype)
-    assert_equals(res[1], int(parentid))
-    world.conn.commit()

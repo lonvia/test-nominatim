@@ -4,7 +4,7 @@ Feature: Parenting of objects
 
 
     Scenario: Address without addr tags
-        Given the scenario roads-with-pois
+        Given the scene roads-with-pois
         And the place nodes
          | osm_id | class | type  | geometry
          | 1      | place | house | :p-N1
@@ -12,11 +12,13 @@ Feature: Parenting of objects
          | osm_id | class   | type        | name           | geometry
          | 1      | highway | residential | 'name' : 'foo' | :w-north
         When importing
-        Then parent of N1 is W1
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W1
 
 
     Scenario: Address without tags, closest street
-        Given the scenario roads-with-pois
+        Given the scene roads-with-pois
         And the place nodes
          | osm_id | class | type  | geometry
          | 1      | place | house | :p-N1
@@ -28,8 +30,10 @@ Feature: Parenting of objects
          | 1      | highway | residential | 'name' : 'foo' | :w-north
          | 2      | highway | residential | 'name' : 'foobar' | :w-south
         When importing
-        Then parent of N1 is W1
-        And parent of N2 is W1
-        And parent of N3 is W2
-        And parent of N4 is W2
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W1
+         | N2     | W1
+         | N3     | W2
+         | N4     | W2
 
