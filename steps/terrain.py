@@ -1,4 +1,5 @@
 from lettuce import *
+from nose.tools import *
 import os
 import subprocess
 import psycopg2
@@ -44,6 +45,29 @@ def run_nominatim_script(script, *args):
 def make_hash(inp):
     return eval('{' + inp + '}')
 
+@world.absorb
+def split_id(oid):
+    """ Splits a unique identifier for places into its components.
+        As place_ids cannot be used for testing, we use a unique
+        identifier instead that is of the form <osmtype><osmid>[:class].
+    """
+    oid = oid.strip()
+    osmtype = oid[0]
+    assert_in(osmtype, ('R','N','W'))
+    if ':' in oid:
+        osmid, cls = oid[1:].split(':')
+        return (osmtype, int(osmid), cls)
+    else:
+        return (osmtype, int(oid[1:]), None)
+
+@world.absorb
+def db_dump_table(table):
+    cur = world.conn.cursor()
+    cur.execute('SELECT * FROM %s' % table)
+    print '<<<<<<< BEGIN OF TABLE DUMP %s' % table
+    for res in cur:
+            print res
+    print '<<<<<<< END OF TABLE DUMP %s' % table
 
 @world.absorb
 def db_drop_database(name):

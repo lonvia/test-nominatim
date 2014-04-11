@@ -52,7 +52,8 @@ def check_place_content(step):
 def check_placex_missing(step, osmtyp, osmid):
     cur = world.conn.cursor()
     cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
-    assert_equals (cur.fetchone()[0], 0)
+    numres = cur.fetchone()[0]
+    assert_equals (numres, 0)
 
 @world.absorb
 def query_cmd(query):

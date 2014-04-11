@@ -25,7 +25,7 @@ Feature: Import into placex
         Given the scenario country
         And the place areas
           | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
-          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | de           | -100 40, -101 40, -101 41, -100 41, -100 40
+          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | de           | (-100 40, -101 40, -101 41, -100 41, -100 40)
         When importing
         Then table placex contains
           | object | country_code | calculated_country_code |
@@ -35,7 +35,7 @@ Feature: Import into placex
         Given the scenario country
         And the place areas
           | osm_type | osm_id | class    | type            | admin_level | name            | country_code | geometry
-          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | xx          | -100 40, -101 40, -101 41, -100 41, -100 40
+          | R        | 1      | boundary | administrative  | 2           | 'name' : 'foo'  | xx          | (-100 40, -101 40, -101 41, -100 41, -100 40)
         When importing
         Then table placex contains
           | object | country_code | calculated_country_code |
@@ -50,14 +50,14 @@ Feature: Import into placex
           | object | admin_level |
           | N1     | 3           |
 
-    Scenario: admin level is default null
+    Scenario: admin level is default 15
         Given the place nodes
           | osm_id | class   | type      | name
           | 1      | amenity | prison    | 'name' : 'foo'
         When importing
         Then table placex contains
           | object | admin_level |
-          | N1     | None        |
+          | N1     | 15          |
 
     Scenario: admin level is never larger than 15
         Given the place nodes
@@ -79,16 +79,16 @@ Feature: Import into placex
     Scenario: postcode boundary without postcode is dropped
         Given the place areas
           | osm_type | osm_id | class    | type        | geometry
-          | R        | 1      | boundary | postal_code | 0 0, 1 0, 1 1, 0 1, 0 0
+          | R        | 1      | boundary | postal_code | (0 0, 1 0, 1 1, 0 1, 0 0)
         When importing
         Then table placex has no entry for R1
 
     Scenario: search and address ranks for GB post codes correctly assigned
         Given the place nodes
          | osm_id  | class | type     | postcode | geometry
-         | 1       | place | postcode | E45 2CD  | -1, 53
-         | 2       | place | postcode | E45 2    | -1, 52
-         | 3       | place | postcode | Y45      | -1, 52
+         | 1       | place | postcode | E45 2CD  | country:gb
+         | 2       | place | postcode | E45 2    | country:gb
+         | 3       | place | postcode | Y45      | country:gb
         When importing
         Then table placex contains
          | object | postcode | calculated_country_code | rank_search | rank_address
@@ -99,9 +99,9 @@ Feature: Import into placex
     Scenario: wrongly formatted GB postcodes are down-ranked
         Given the place nodes
          | osm_id  | class | type     | postcode | geometry
-         | 1       | place | postcode | EA452CD  | -1, 53
-         | 2       | place | postcode | E45 23   | -1, 52
-         | 3       | place | postcode | y45      | -1, 52
+         | 1       | place | postcode | EA452CD  | country:gb
+         | 2       | place | postcode | E45 23   | country:gb
+         | 3       | place | postcode | y45      | country:gb
         When importing
         Then table placex contains
          | object | calculated_country_code | rank_search | rank_address
@@ -112,10 +112,10 @@ Feature: Import into placex
     Scenario: search and address rank for DE postcodes correctly assigned
         Given the place nodes
          | osm_id  | class | type     | postcode | geometry
-         | 1       | place | postcode | 56427    | 10, 52
-         | 2       | place | postcode | 5642     | 10, 52
-         | 3       | place | postcode | 5642A    | 10, 52
-         | 4       | place | postcode | 564276   | 10, 52
+         | 1       | place | postcode | 56427    | country:de
+         | 2       | place | postcode | 5642     | country:de
+         | 3       | place | postcode | 5642A    | country:de
+         | 4       | place | postcode | 564276   | country:de
         When importing
         Then table placex contains
          | object | calculated_country_code | rank_search | rank_address
@@ -127,15 +127,15 @@ Feature: Import into placex
     Scenario: search and address rank for other postcodes are correctly assigned
         Given the place nodes
          | osm_id  | class | type     | postcode | geometry
-         | 1       | place | postcode | 1        | -100, 52
-         | 2       | place | postcode | X3       | -100, 52
-         | 3       | place | postcode | 543      | -100, 52
-         | 4       | place | postcode | 54dc     | -100, 52
-         | 5       | place | postcode | 12345    | -100, 52
-         | 6       | place | postcode | 55TT667  | -100, 52
-         | 7       | place | postcode | 123-65   | -100, 52
-         | 8       | place | postcode | 12 445 4 | -100, 52
-         | 9       | place | postcode | A1:bc10  | -100, 52
+         | 1       | place | postcode | 1        | country:ca
+         | 2       | place | postcode | X3       | country:ca
+         | 3       | place | postcode | 543      | country:ca
+         | 4       | place | postcode | 54dc     | country:ca
+         | 5       | place | postcode | 12345    | country:ca
+         | 6       | place | postcode | 55TT667  | country:ca
+         | 7       | place | postcode | 123-65   | country:ca
+         | 8       | place | postcode | 12 445 4 | country:ca
+         | 9       | place | postcode | A1:bc10  | country:ca
         When importing
         Then table placex contains
          | object | calculated_country_code | rank_search | rank_address

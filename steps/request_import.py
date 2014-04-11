@@ -39,24 +39,33 @@ def tear_down_test_database(scenario):
         cur.execute('DROP DATABASE %s' % (world.config.test_db,))
         conn.close()
 
+
+def _format_placex_cols(cols, geomtype, force_name):
+    if 'name' in cols:
+        cols['name'] = world.make_hash(cols['name'])
+    elif force_name:
+        cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
+    if 'extratags' in cols:
+        cols['extratags'] = world.make_hash(cols['extratags'])
+    if 'admin_level' not in cols:
+        cols['admin_level'] = 100
+    if 'geometry' in cols:
+        coords = world.get_scenario_geometry(cols['geometry'])
+        if coords is None:
+            coords = "'%s(%s)'::geometry" % (geomtype, cols['geometry'])
+        else:
+            coords = "'%s'::geometry" % coords.wkt
+        cols['geometry'] = coords
+
+
 def _insert_place_table_nodes(places, force_name):
     cur = world.conn.cursor()
     for line in places:
         cols = dict(line)
         cols['osm_type'] = 'N'
-        if 'name' in cols:
-            cols['name'] = world.make_hash(cols['name'])
-        elif force_name:
-            cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
-        if 'extratags' in cols:
-            cols['extratags'] = world.make_hash(cols['extratags'])
+        _format_placex_cols(cols, 'ST_POINT', force_name)
         if 'geometry' in cols:
-            coords = world.get_scenario_geometry(cols['geometry'])
-            if coords is None:
-                coords = "ST_Point(%f, %f)" % tuple([float(x) for x in cols['geometry'].split(',')])
-            else:
-                coords = "'%s'::geometry" % coords.wkt
-            del(cols['geometry'])
+            coords = cols.pop('geometry')
         else:
             coords = "ST_Point(%f, %f)" % (random.random()*360 - 180, random.random()*180 - 90)
 
@@ -74,18 +83,8 @@ def _insert_place_table_ways(places, force_name):
     for line in places:
         cols = dict(line)
         cols['osm_type'] = 'W'
-        if 'name' in cols:
-            cols['name'] = world.make_hash(cols['name'])
-        elif force_name:
-            cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
-        if 'extratags' in cols:
-            cols['extratags'] = world.make_hash(cols['extratags'])
-        coords = world.get_scenario_geometry(cols['geometry'])
-        if coords is None:
-            coords = "'LINESTRING(%s)'::geometry" % cols['geometry']
-        else:
-            coords = "'%s'::geometry" % coords.wkt
-        del(cols['geometry'])
+        _format_placex_cols(cols, 'LINESTRING', force_name)
+        coords = cols.pop('geometry')
 
         query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
@@ -99,18 +98,8 @@ def _insert_place_table_areas(places, force_name):
     cur = world.conn.cursor()
     for line in places:
         cols = dict(line)
-        if 'name' in cols:
-            cols['name'] = world.make_hash(cols['name'])
-        elif force_name:
-            cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
-        if 'extratags' in cols:
-            cols['extratags'] = world.make_hash(cols['extratags'])
-        coords = world.get_scenario_geometry(cols['geometry'])
-        if coords is None:
-            coords = "'POLYGON((%s))'::geometry" % cols['geometry']
-        else:
-            coords = "'%s'::geometry" % coords.wkt
-        del(cols['geometry'])
+        _format_placex_cols(cols, 'POLYGON', force_name)
+        coords = cols.pop('geometry')
 
         query = 'INSERT INTO place (%s, geometry) values(%s, ST_SetSRID(%s, 4326))' % (
               ','.join(cols.iterkeys()),
@@ -154,6 +143,7 @@ def update_place_table_nodes(step, osmtype):
         _insert_place_table_areas(step.hashes, False)
     world.run_nominatim_script('update', 'index')
 
+
 @step(u'importing')
 def import_database(step):
     world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions')
@@ -163,4 +153,22 @@ def import_database(step):
 			       geometry) select * from place""")
     world.conn.commit()
     world.run_nominatim_script('setup', 'index', 'index-noanalyse')
+    #world.db_dump_table('placex')
+
+@step(u'marking for delete (.*)')
+def update_delete_places(step, places):
+    world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')
+    cur = world.conn.cursor()
+    for place in places.split(','):
+        osmtype, osmid, cls = world.split_id(place)
+        if cls is None:
+            q = "delete from place where osm_type = %s and osm_id = %s"
+            params = (osmtype, osmid)
+        else:
+            q = "delete from place where osm_type = %s and osm_id = %s and class = %s"
+            params = (osmtype, osmid, cls)
+        cur.execute(q, params)
+    world.conn.commit()
+    #world.db_dump_table('placex')
+    world.run_nominatim_script('update', 'index')
 

@@ -52,7 +52,7 @@ Feature: Import and search of names
     Scenario: No copying name tag if only one name
         Given the place nodes
           | osm_id | class | type      | name              | geometry
-          | 1      | place | locality  | 'name' : 'german' | 11,50
+          | 1      | place | locality  | 'name' : 'german' | country:de
         When importing
         Then table placex contains
           | object | calculated_country_code |
@@ -64,7 +64,7 @@ Feature: Import and search of names
     Scenario: Copying name tag to default language if it does not exist
         Given the place nodes
           | osm_id | class | type      | name                                     | geometry
-          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish' | 11,50
+          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish' | country:de
         When importing
         Then table placex contains
           | object | calculated_country_code |
@@ -78,7 +78,7 @@ Feature: Import and search of names
     Scenario: Copying default language name tag to name if it does not exist
         Given the place nodes
           | osm_id | class | type      | name                                        | geometry
-          | 1      | place | locality  | 'name:de' : 'german', 'name:fi' : 'finnish' | 11,50
+          | 1      | place | locality  | 'name:de' : 'german', 'name:fi' : 'finnish' | country:de
         When importing
         Then table placex contains
           | object | calculated_country_code |
@@ -92,7 +92,7 @@ Feature: Import and search of names
     Scenario: Do not overwrite default language with name tag
         Given the place nodes
           | osm_id | class | type      | name                                                          | geometry
-          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish', 'name:de' : 'local' | 11,50
+          | 1      | place | locality  | 'name' : 'german', 'name:fi' : 'finnish', 'name:de' : 'local' | country:de
         When importing
         Then table placex contains
           | object | calculated_country_code |
@@ -106,8 +106,8 @@ Feature: Import and search of names
     Scenario: Landuse without name are ignored
         Given the place areas
           | osm_type | osm_id | class    | type        | geometry
-          | R        | 1      | natural  | meadow      | 0 0, 1 0, 1 1, 0 1, 0 0
-          | R        | 2      | landuse  | industrial  | 0 0, -1 0, -1 -1, 0 -1, 0 0
+          | R        | 1      | natural  | meadow      | (0 0, 1 0, 1 1, 0 1, 0 0)
+          | R        | 2      | landuse  | industrial  | (0 0, -1 0, -1 -1, 0 -1, 0 0)
         When importing
         Then table placex has no entry for R1
         And table placex has no entry for R2
@@ -115,8 +115,8 @@ Feature: Import and search of names
     Scenario: Landuse with name are found
         Given the place areas
           | osm_type | osm_id | class    | type        | name                | geometry
-          | R        | 1      | natural  | meadow      | 'name' : 'landuse1' | 0 0, 1 0, 1 1, 0 1, 0 0
-          | R        | 2      | landuse  | industrial  | 'name' : 'landuse2' | 0 0, -1 0, -1 -1, 0 -1, 0 0
+          | R        | 1      | natural  | meadow      | 'name' : 'landuse1' | (0 0, 1 0, 1 1, 0 1, 0 0)
+          | R        | 2      | landuse  | industrial  | 'name' : 'landuse2' | (0 0, -1 0, -1 -1, 0 -1, 0 0)
         When importing
         Then query "landuse1" returns R1
         And query "landuse2" returns R2
@@ -124,7 +124,7 @@ Feature: Import and search of names
     Scenario: Postcode boundaries without ref
         Given the place areas
           | osm_type | osm_id | class    | type        | postcode | geometry
-          | R        | 1      | boundary | postal_code | 12345    | 0 0, 1 0, 1 1, 0 1, 0 0
+          | R        | 1      | boundary | postal_code | 12345    | (0 0, 1 0, 1 1, 0 1, 0 0)
         When importing
         Then query "12345" returns R1
 
