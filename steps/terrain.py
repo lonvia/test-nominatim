@@ -1,5 +1,6 @@
 from lettuce import *
 from nose.tools import *
+import logging
 import os
 import subprocess
 import psycopg2
@@ -8,6 +9,14 @@ from shapely.wkt import loads as wkt_load
 class NominatimConfig:
 
     def __init__(self):
+        # logging setup
+        loglevel = getattr(logging, os.environ.get('LOGLEVEL','info').upper())
+        if 'LOGFILE' in os.environ:
+            logging.basicConfig(filename=os.environ.get('LOGFILE','run.log'),
+                                level=loglevel)
+        else:
+            logging.basicConfig(level=loglevel)
+        # Nominatim test setup
         self.base_url = os.environ.get('NOMINATIM_SERVER', 'http://localhost/nominatim')
         self.source_dir = os.path.abspath(os.environ.get('NOMINATIM_DIR', '../Nominatim'))
         self.template_db = os.environ.get('TEMPLATE_DB', 'test_template_nominatim')

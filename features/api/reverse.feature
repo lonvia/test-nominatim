@@ -3,7 +3,11 @@ Feature: Reverse geocoding
 
     # Make sure country is not overwritten by the postcode
     Scenario: Country is returned
+        Given the request parameters
+          | accept-language
+          | de
         When looking up coordinates 53.9788769,13.0830313
-        Using language "de"
-        Then the location address contains country "Deutschland"
+        Then result addresses contain 
+         | ID | country
+         | 0  | Deutschland
 

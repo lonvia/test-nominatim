@@ -84,7 +84,7 @@ def setup_call_structured_search(step):
     for line in step.hashes:
         world.params[line['type']] = line['value']
 
-@step('looking up coordinates ([-\d.]+),([-\d.]+)')
+#@step('looking up coordinates ([-\d.]+),([-\d.]+)')
 def setup_call_reverse(step, lat, lon):
     world.requesttype = 'reverse'
     world.params = {}

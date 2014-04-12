@@ -181,3 +181,19 @@ def update_delete_places(step, places):
     #world.db_dump_table('placex')
     world.run_nominatim_script('update', 'index')
 
+
+
+@step(u'sending query "(.*)"$')
+def query_cmd(step, query):
+    """ Results in standard query output. The same tests as for API queries
+        can be used.
+    """
+    cmd = [os.path.join(world.config.source_dir, 'utils', 'query.php'),
+           '--search', query]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (outp, err) = proc.communicate()
+    assert (proc.returncode == 0), "query.php failed with message: %s" % err
+    world.page = outp
+    world.response_format = 'json'   
+    world.returncode = 200
+

@@ -66,15 +66,6 @@ def check_placex_missing(step, osmtyp, osmid):
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 
-@step(u'sending query "(.*)"$')
-def query_cmd(step, query):
-    cmd = [os.path.join(world.config.source_dir, 'utils', 'query.php'),
-           '--search', query]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (outp, err) = proc.communicate()
-    assert (proc.returncode == 0), "query.php failed with message: %s" % err
-    world.results = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(outp)
-    
     
 @step(u'query "([^"]*)" returns nothing')
 def check_simple_query(step, query):

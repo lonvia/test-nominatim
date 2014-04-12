@@ -1,18 +1,14 @@
 Feature: Object details
-    Testing the details function
-
-    Scenario: Details via place id
-        When looking up place 1758375
-        Then a details page is returned
-
+    Check details page for correctness
 
     Scenario Outline: Details via OSM id
-        When looking up osm <type> <id>
-        Then a HTTP 200 is returned
+        When looking up details for <object>
+        Then the result is valid
 
     Examples:
-     | type | id
-     | N    | 158845944
-     | W    | 72493656
-     | R    | 62422
+     | object
+     | 1758375
+     | N158845944
+     | W72493656
+     | R62422
 

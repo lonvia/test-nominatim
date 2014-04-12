@@ -1,57 +1,100 @@
 Feature: Localization of search results
 
     Scenario: Search - default language
-        When searching for "Germany"
-        Then result 1 starts with "Deutschland"
+        When sending json search query "Germany"
+        Then results contain
+          | ID | display_name
+          | 0  | Deutschland.*
 
     Scenario: Search - accept-language first
-        When searching for "Deutschland"
-        Using language "en,de"
-        Then result 1 starts with "Germany"
-
+        Given the request parameters
+          | accept-language
+          | en,de
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Germany.*
+        
     Scenario: Search - accept-language missing
-        When searching for "Deutschland"
-        Using language "xx,fr,en,de"
-        Then result 1 starts with "Allemagne"
+        Given the request parameters
+          | accept-language
+          | xx,fr,en,de
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Allemagne.*
 
     Scenario: Search - http accept language header first
-        When searching for "Deutschland"
-        Using language header "fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3"
-        Then result 1 starts with "Allemagne"
+        Given the HTTP header
+          | accept-language
+          | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Allemagne.*
 
     Scenario: Search - http accept language header and accept-language
-        When searching for "Germany"
-        Using language header "fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3"
-        Using language "de,en"
-        Then result 1 starts with "Deutschland"
+        Given the request parameters
+          | accept-language
+          | de,en
+        Given the HTTP header
+          | accept-language
+          | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Deutschland.*
 
     Scenario: Search - http accept language header fallback
-        When searching for "Deutschland"
-        Using language header "fr-ca,en-ca;q=0.5"
-        Then result 1 starts with "Allemagne"
+        Given the HTTP header
+          | accept-language
+          | fr-ca,en-ca;q=0.5
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Allemagne.*
 
     Scenario: Search - http accept language header fallback (upper case)
-        When searching for "Deutschland"
-        Using language header "fr-FR;q=0.8,en-ca;q=0.5"
-        Then result 1 starts with "Allemagne"
+        Given the HTTP header
+          | accept-language
+          | fr-FR;q=0.8,en-ca;q=0.5
+        When sending json search query "Deutschland"
+        Then results contain
+          | ID | display_name
+          | 0  | Allemagne.*
 
     Scenario: Reverse - default language
         When looking up coordinates 48.13921,11.57328
-        Then the location address contains county "München"
+        Then result addresses contain
+          | ID | county
+          | 0  | München
 
     Scenario: Reverse - accept-language parameter
+        Given the request parameters
+          | accept-language
+          | en,fr
         When looking up coordinates 48.13921,11.57328
-        Using language "en,fr"
-        Then the location address contains county "Munich"
+        Then result addresses contain
+          | ID | county
+          | 0  | Munich
 
     Scenario: Reverse - HTTP accept language header
+        Given the HTTP header
+          | accept-language
+          | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
         When looking up coordinates 48.13921,11.57328
-        Using language header "fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3"
-        Then the location address contains county "Munich"
-
+        Then result addresses contain
+          | ID | county
+          | 0  | Munich
+    
     Scenario: Reverse - accept-language parameter and HTTP header
+        Given the request parameters
+          | accept-language
+          | it
+        Given the HTTP header
+          | accept-language
+          | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
         When looking up coordinates 48.13921,11.57328
-        Using language header "fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3"
-        Using language "it"
-        Then the location address contains county "Monaco di Baviera"
-
+        Then result addresses contain
+          | ID | county
+          | 0  | Monaco di Baviera
