@@ -2,109 +2,155 @@ Feature: Search queries
     Testing different queries and parameters
 
     Scenario: Simple XML search
-        When searching for "Schaan"
-        Then at least 1 xml result is returned
-        And xml result 1 has attributes place_id,osm_type,osm_id
-        And xml result 1 has attributes place_rank,boundingbox
-        And xml result 1 has attributes lat,lon,display_name
-        And xml result 1 has attributes class,type,importance,icon
-        And xml result 1 has no address details
+        When sending xml search query "Schaan"
+        Then result 0 has attributes place_id,osm_type,osm_id
+        And result 0 has attributes place_rank,boundingbox
+        And result 0 has attributes lat,lon,display_name
+        And result 0 has attributes class,type,importance,icon
+        And result 0 has not attributes address
 
     Scenario: Simple JSON search
-        When searching for "Vaduz"
-        Then at least 1 result is returned
-        And result 1 has attributes place_id,licence,icon,class,type
-        And result 1 has attributes osm_type,osm_id,boundingbox
-        And result 1 has attributes lat,lon,display_name,importance
-        And result 1 has not attributes address
+        When sending json search query "Vaduz"
+        And result 0 has attributes place_id,licence,icon,class,type
+        And result 0 has attributes osm_type,osm_id,boundingbox
+        And result 0 has attributes lat,lon,display_name,importance
+        And result 0 has not attributes address
 
     Scenario: JSON search with addressdetails
-        When searching for "Montevideo"
-        Given parameter addressdetails as "1"
-        Then result 1 has address details with "Uruguay"
-        And result 1 has address details in order city,state,country,country_code
+        When sending json search query "Montevideo" with address
+        Then address of result 0 is
+          | type         | value
+          | city         | Montevideo
+          | state        | Montevideo
+          | country      | Uruguay
+          | country_code | uy
 
     Scenario: XML search with addressdetails
-        When searching for "Inuvik"
-        Given parameter addressdetails as "1"
-        Then xml result 1 has address details with "Canada"
-        And xml result 1 has address details in order town,state,country,country_code
+        When sending xml search query "Inuvik" with address
+        Then address of result 0 is
+          | type         | value
+          | town         | Inuvik
+          | state        | Northwest Territories
+          | country      | Canada
+          | country_code | ca
 
     Scenario: Address details with unknown class types
-        When searching for "foobar, Essen"
-        Given parameter addressdetails as "1"
-        Then result 1 has attribute class as "leisure"
-        And result 1 has attribute type as "hackerspace"
-        And address 1 has details with type address29
-        And address 1 has details without type leisure
-        And address 1 has details without type hackerspace
+        When sending json search query "foobar, Essen" with address
+        Then results contain
+          | ID | class   | type
+          | 0  | leisure | hackerspace
+        And result addresses contain
+          | ID | address29
+          | 0  | foobar
+        And address of result 0 does not contain leisure,hackerspace
 
-    @Fail
     Scenario: Disabling deduplication
-        When searching for "Oxford Street, London"
-        Given parameter dedupe as "1"
+        When sending json search query "Oxford Street, London"
         Then there are no duplicates
-        Given parameter dedupe as "0"
+        Given the request parameters
+          | dedupe
+          | 0
+        When sending json search query "Oxford Street, London"
         Then there are duplicates
 
     Scenario: Search with bounded viewbox in right area
-        When searching for "restaurant"
-        Given parameter bounded as "1"
-        And parameter viewbox as "-87.7,41.9,-87.57,41.85"
-        Then result 1 is in "Chicago"
+        Given the request parameters
+          | bounded | viewbox
+          | 1       | -87.7,41.9,-87.57,41.85
+        When sending json search query "restaurant" with address
+        Then result addresses contain
+          | ID | city
+          | 0  | Chicago
 
     Scenario: Search with bounded viewboxlbrt in right area
-        When searching for "restaurant"
-        Given parameter bounded as "1"
-        And parameter viewboxlbrt as "-87.7,41.85,-87.57,41.9"
-        Then result 1 is in "Chicago"
-
+        Given the request parameters
+          | bounded | viewboxlbrt
+          | 1       | -87.7,41.85,-87.57,41.9
+        When sending json search query "restaurant" with address
+        Then result addresses contain
+          | ID | city
+          | 0  | Chicago
+    
     Scenario: No POI search with unbounded viewbox
-        When searching for "restaurant"
-        And parameter viewbox as "-87.7,41.9,-87.57,41.85"
-        Then name of result 1 contains "restaurant"
+        Given the request parameters
+          | viewbox
+          | -87.7,41.9,-87.57,41.85
+        When sending json search query "restaurant"
+        Then results contain
+          | display_name
+          | [^,]*(?i)restaurant.*
 
     Scenario: Prefer results within viewbox
-        When searching for "royan"
-        And parameter accept-language as "en"
-        Then result 1 is in "France"    
-        When searching for "royan"
-        And parameter viewbox as "51.94,36.59,51.99,36.56"
-        And parameter accept-language as "en"
-        Then result 1 is in "Iran"    
+        Given the request parameters
+          | accept-language
+          | en
+        When sending json search query "royan" with address
+        Then result addresses contain
+          | ID | country
+          | 0  | France
+        Given the request parameters
+          | accept-language | viewbox
+          | en              | 51.94,36.59,51.99,36.56
+        When sending json search query "royan" with address
+        Then result addresses contain
+          | ID | country
+          | 0  | Iran
 
     Scenario: Overly large limit number for search results
-        When searching for "Neustadt"
-        And parameter limit as "1000"
+        Given the request parameters
+          | limit
+          | 1000
+        When sending json search query "Neustadt"
         Then at most 50 results are returned
 
     Scenario: Limit number of search results
-        When searching for "Neustadt"
-        And parameter limit as "4"
+        Given the request parameters
+          | limit
+          | 4
+        When sending json search query "Neustadt"
         Then exactly 4 results are returned
 
     Scenario: Restrict to feature type country
-        When searching for "Monaco"
-        And parameter featureType as "country"
-        Then result 1 has rank 4 to 4
+        Given the request parameters
+          | featureType
+          | country
+        When sending xml search query "Monaco"
+        Then results contain
+          | place_rank
+          | 4
 
     Scenario: Restrict to feature type state
-        When searching for "Berlin"
-        Then result 1 has rank 15 to 16
-        When searching for "Berlin"
-        And parameter featureType as "state"
-        Then result 1 has rank 7 to 8
+        When sending xml search query "Berlin"
+        Then results contain
+          | ID | place_rank
+          | 0  | 1[56]
+        Given the request parameters
+          | featureType
+          | state
+        When sending xml search query "Berlin"
+        Then results contain
+          | place_rank
+          | [78]
 
     Scenario: Restrict to feature type city
-        When searching for "Monaco"
-        Given parameter featureType as "city"
-        Then result 1 has rank 14 to 16
+        Given the request parameters
+          | featureType
+          | city
+        When sending xml search query "Monaco"
+        Then results contain
+          | place_rank
+          | 1[56789]
 
 
     Scenario: Restrict to feature type settlement
-        When searching for "Everest"
-        Then name of result 1 contains "Mount Everest" 
-        When searching for "Everest"
-        Given parameter addressdetails as "1"
-        And parameter featuretype as "settlement"
-        Then result 1 has address details without "Mount Everest"
+        When sending json search query "Everest"
+        Then results contain
+          | ID | display_name
+          | 0  | Mount Everest.*
+        Given the request parameters
+          | featureType
+          | settlement
+        When sending json search query "Everest"
+        Then results contain
+          | ID | display_name
+          | 0  | Everest.*

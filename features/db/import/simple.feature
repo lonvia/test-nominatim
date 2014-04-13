@@ -10,4 +10,8 @@ Feature: Import of simple objects
         Then table placex contains
           | object | class  | type    | name
           | N1     | place  | village | 'name' : 'Foo'
-        And query "foo" returns N1
+        When sending query "Foo"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+

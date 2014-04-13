@@ -10,6 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def api_call(requesttype):
+    world.json_callback = None
     data = urllib.urlencode(world.params)
     url = "%s/%s?%s" % (world.config.base_url, requesttype, data)
     req = urllib2.Request(url=url, headers=world.header)
@@ -35,10 +36,10 @@ def api_call(requesttype):
         world.response_format = fmt
     elif fmt in ('json', 'jsonv2'):
         if 'json_callback' in world.params:
-            func = world.params['json_callback']
-            assert world.page.startswith(func + '(')
+            world.json_callback = world.params['json_callback']
+            assert world.page.startswith(world.json_callback + '(')
             assert world.page.endswith(')')
-            world.page = world.page[(len(func)+1):-1]
+            world.page = world.page[(len(world.json_callback)+1):-1]
             assert_equals('application/javascript', pagetype)
         else:
             assert_equals('application/json', pagetype)
@@ -59,6 +60,7 @@ def api_call(requesttype):
 def api_setup_prepare_params(scenario):
     world.results = []
     world.params = {}
+    world.header = {}
 
 @step(u'the request parameters$')
 def api_setup_parameters(step):
@@ -75,17 +77,21 @@ def api_setup_parameters(step):
     world.header = step.hashes[0]
 
 
-@step(u'sending (\w* )search query "([^"]*)"')
-def api_setup_search(step, fmt, query):
-    world.params['q'] = query
-    if fmt.strip():
+@step(u'sending( \w+)? search query "([^"]*)"( with address)?')
+def api_setup_search(step, fmt, query, doaddr):
+    world.params['q'] = query.encode('utf8')
+    if doaddr:
+        world.params['addressdetails'] = 1
+    if fmt:
         world.params['format'] = fmt.strip()
     api_call('search')
 
-@step(u'sending (\w* )structured query$')
-def api_setup_structured_search(step, fmt):
-    world.params.extend(step.hashes[0])
-    if fmt.strip():
+@step(u'sending( \w+)? structured query( with address)?$')
+def api_setup_structured_search(step, fmt, doaddr):
+    world.params.update(step.hashes[0])
+    if doaddr:
+        world.params['addressdetails'] = 1
+    if fmt:
         world.params['format'] = fmt.strip()
     api_call('search')
 

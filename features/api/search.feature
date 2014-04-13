@@ -2,8 +2,8 @@ Feature: Search queries
     Testing correctness of results
 
     Scenario: UK House number search
-        When searching for "27 Thoresby Road, Broxtowe"
-        Then address 1 contains the following:
+        When sending json search query "27 Thoresby Road, Broxtowe" with address
+        Then address of result 0 contains
           | type         | value
           | house_number | 27
           | road         | Thoresby Road
@@ -14,20 +14,26 @@ Feature: Search queries
 
 
     Scenario: House number search for non-street address
-        When searching for "4 Pomocnia, Poland"
-        Given language "en"
-        Then address 1 contains the following:
+        Given the request parameters
+          | accept-language
+          | en        
+        When sending json search query "4 Pomocnia, Poland" with address
+        Then address of result 0 is
           | type         | value
           | house_number | 4
           | suburb       | Pomocnia
+          | county       | gmina Pokrzywnica
+          | state        | Masovian Voivodeship
+          | postcode     | 06-121
           | country      | Poland
           | country_code | pl
-        And address 1 has details without type road
 
     Scenario: House number interpolation even
-        When searching for "140 rue Don Bosco, Saguenay"
-        Given language "en"
-        Then address 1 contains the following:
+        Given the request parameters
+          | accept-language
+          | en        
+        When sending json search query "140 rue Don Bosco, Saguenay" with address
+        Then address of result 0 contains
           | type         | value
           | house_number | 140
           | road         | rue Don Bosco
@@ -37,9 +43,11 @@ Feature: Search queries
           | country_code | ca
 
     Scenario: House number interpolation odd
-        When searching for "141 rue Don Bosco, Saguenay"
-        Given language "en"
-        Then address 1 contains the following:
+        Given the request parameters
+          | accept-language
+          | en        
+        When sending json search query "141 rue Don Bosco, Saguenay" with address
+        Then address of result 0 contains
           | type         | value
           | house_number | 141
           | road         | rue Don Bosco
@@ -49,14 +57,18 @@ Feature: Search queries
           | country_code | ca
 
     Scenario: TIGER house number
-        When searching for "3 West Victory Way, Craig"
-        Then result 1 has not attributes osm_id,osm_type
+        When sending json search query "3 West Victory Way, Craig"
+        Then result 0 has not attributes osm_id,osm_type
 
     Scenario: TIGER house number (road fallback)
-        When searching for "3030 West Victory Way, Craig"
-        Then result 1 has attributes osm_id,osm_type
+        When sending json search query "3030 West Victory Way, Craig"
+        Then result 0 has attributes osm_id,osm_type
 
     Scenario: Expansion of Illinois
-        When searching for "il, us"
-        Using language "en"
-        Then result 1 starts with "Illinois"
+        Given the request parameters
+          | accept-language
+          | en        
+        When sending json search query "il, us"
+        Then results contain
+          | ID | display_name
+          | 0  | Illinois.*

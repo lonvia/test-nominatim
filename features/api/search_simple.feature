@@ -3,17 +3,31 @@ Feature: Simple Tests
     These tests should pass on any Nominatim installation.
 
     Scenario Outline: Testing different parameters
-        When searching for "Manchester"
-        Given parameter <parameter> as "<value>"
-        Then a valid response is returned
-        Given format html
-        Then a valid response is returned
-        Given format xml
-        Then valid search xml is returned
-        Given format json
-        Then valid search json is returned
-        Given format jsonv2
-        Then valid search json is returned
+        Given the request parameters
+          | <parameter>
+          | <value>
+        When sending search query "Manchester"
+        Then the result is valid html
+        Given the request parameters
+          | <parameter>
+          | <value>
+        When sending html search query "Manchester"
+        Then the result is valid html
+        Given the request parameters
+          | <parameter>
+          | <value>
+        When sending xml search query "Manchester"
+        Then the result is valid xml
+        Given the request parameters
+          | <parameter>
+          | <value>
+        When sending json search query "Manchester"
+        Then the result is valid json
+        Given the request parameters
+          | <parameter>
+          | <value>
+        When sending jsonv2 search query "Manchester"
+        Then the result is valid json
 
     Examples:
      | parameter        | value
@@ -28,6 +42,7 @@ Feature: Simple Tests
      | polygon_geojson  | 1
      | polygon_geojson  | 0
      | polygon_svg      | 1
+     | polygon_svg      | 0
      | accept-language  | de,en
      | countrycodes     | uk,ir
      | bounded          | 1
@@ -38,19 +53,23 @@ Feature: Simple Tests
      | dedupe           | 0
 
     Scenario: Search with invalid output format
-        When searching for "Berlin"
-        Given format "fd$#"
-        Then a valid response is returned
+        Given the request parameters
+          | format
+          | fd$#
+        When sending search query "Berlin"
+        Then the result is valid html
 
     Scenario Outline: Simple Searches
-        When searching for "<query>"
-        Then a valid response is returned
-        Given format html
-        Then a valid response is returned
-        Given format json
-        Then valid search json is returned
-        Given format jsonv2
-        Then valid search json is returned
+        When sending search query "<query>"
+        Then the result is valid html
+        When sending html search query "<query>"
+        Then the result is valid html
+        When sending xml search query "<query>"
+        Then the result is valid xml
+        When sending json search query "<query>"
+        Then the result is valid json
+        When sending jsonv2 search query "<query>"
+        Then the result is valid json
 
     Examples:
      | query
@@ -67,63 +86,63 @@ Feature: Simple Tests
      | 47.4,8.3
 
     Scenario: Empty XML search
-        When searching for "xnznxvcx"
-        Given format xml
-        Then valid search xml is returned
-        And xml header contains attribute querystring as "xnznxvcx"
-        And xml header contains attribute polygon as "false"
-        And xml more url consists of
-        | param   | value
-        | format  | xml
-        | q       | xnznxvcx
+        When sending xml search query "xnznxvcx"
+        Then result header contains
+          | attr        | value
+          | querystring | xnznxvcx
+          | polygon     | false
+          | more_url    | .*format=xml.*q=xnznxvcx.*
 
     Scenario: Empty XML search with special XML characters
-        When searching for "xfdghn&zxn"xvbyx<vxx>cssdex"
-        Given format xml
-        Then valid search xml is returned
-        And xml header contains attribute querystring as "xfdghn&zxn"xvbyx<vxx>cssdex"
-        And xml header contains attribute polygon as "false"
-        And xml more url consists of
-        | param   | value
-        | format  | xml
-        | q       | xfdghn&zxn"xvbyx<vxx>cssdex
+        When sending xml search query "xfdghn&zxn"xvbyx<vxx>cssdex"
+        Then result header contains
+          | attr        | value
+          | querystring | xfdghn&zxn"xvbyx<vxx>cssdex
+          | polygon     | false
+          | more_url    | .*format=xml.*q=xfdghn&zxn"xvbyx<vxx>cssdex.*
 
     Scenario: Empty XML search with viewbox
-        When searching for "xnznxvcx"
-        Given format xml
-        And parameter viewbox as "12,45.13,77,33"
-        Then valid search xml is returned
-        And xml header contains attribute querystring as "xnznxvcx"
-        And xml header contains attribute polygon as "false"
-        And xml contains a viewbox of 12,45.13,77,33
+        Given the request parameters
+          | viewbox
+          | 12,45.13,77,33
+        When sending xml search query "xnznxvcx"
+        Then result header contains
+          | attr        | value
+          | querystring | xnznxvcx
+          | polygon     | false
+          | viewbox     | 12,45.13,77,33
 
     Scenario: Empty XML search with viewboxlbrt
-        When searching for "xnznxvcx"
-        Given format xml
-        And parameter viewboxlbrt as "12,34.13,77,45"
-        Then valid search xml is returned
-        And xml header contains attribute querystring as "xnznxvcx"
-        And xml header contains attribute polygon as "false"
-        And xml contains a viewbox of 12,45,77,34.13
+        Given the request parameters
+          | viewboxlbrt
+          | 12,34.13,77,45
+        When sending xml search query "xnznxvcx"
+        Then result header contains
+          | attr        | value
+          | querystring | xnznxvcx
+          | polygon     | false
+          | viewbox     | 12,45.13,77,33
 
     Scenario: Empty XML search with viewboxlbrt and viewbox
-        When searching for "pub"
-        Given format xml
-        And parameter viewbox as "12,45.13,77,33"
-        And parameter viewboxlbrt as "12,34.13,77,45"
-        Then valid search xml is returned
-        And xml header contains attribute querystring as "pub"
-        And xml header contains attribute polygon as "false"
-        And xml contains a viewbox of 12,45,77,34.13
-
+        Given the request parameters
+          | viewbox        | viewboxblrt
+          | 12,45.13,77,33 | 1,2,3,4
+        When sending xml search query "pub"
+        Then result header contains
+          | attr        | value
+          | querystring | pub
+          | polygon     | false
+          | viewbox     | 12,45.13,77,33
 
 
     Scenario Outline: Empty XML search with polygon values
-        When searching for "xnznxvcx"
-        Given format xml
-        And parameter polygon as "<polyval>"
-        Then valid search xml is returned
-        And xml header contains attribute polygon as "<result>"
+        Given the request parameters
+          | polygon
+          | <polyval>
+        When sending xml search query "xnznxvcx"
+        Then result header contains
+          | attr        | value
+          | polygon     | <result>
 
     Examples:
      | result | polyval
@@ -137,18 +156,22 @@ Feature: Simple Tests
      | true   | no
      | true   | '; delete from foobar; select '
 
+
     Scenario: Empty XML search with exluded place ids
-        When searching for "jghrleoxsbwjer"
-        Given format xml
-        And parameter exclude_place_ids as "123,76,342565"
-        Then valid search xml is returned
-        And xml header contains attribute exclude_place_ids as "123,76,342565"
+        Given the request parameters
+          | exclude_place_ids
+          | 123,76,342565
+        When sending xml search query "jghrleoxsbwjer"
+        Then result header contains
+          | attr              | value
+          | exclude_place_ids | 123,76,342565
 
     Scenario Outline: Wrapping of legal jsonp search requests
-        When searching for "Tokyo"
-        Given format json
-        And parameter json_callback as "<data>"
-        Then valid search json is returned
+        Given the request parameters
+          | json_callback
+          | <data>
+        When sending json search query "Tokyo"
+        Then there is a json wrapper "<data>"
 
     Examples:
      | data
@@ -160,9 +183,10 @@ Feature: Simple Tests
      | d_r[$d]
 
     Scenario Outline: Wrapping of illegal jsonp search requests
-        When searching for "Tokyo"
-        Given format json
-        And parameter json_callback as "<data>"
+        Given the request parameters
+          | json_callback
+          | <data>
+        When sending json search query "Tokyo"
         Then a HTTP 400 is returned
 
     Examples:
@@ -173,25 +197,31 @@ Feature: Simple Tests
       | foo; evil
 
     Scenario Outline: Ignore jsonp parameter for anything but json
-        When searching for "Malibu"
-        Given parameter json_callback as "234"
-        Then a valid response is returned
-        Given format xml
-        Then valid search xml is returned
-        Given format html
-        Then a valid response is returned
+        Given the request parameters
+          | json_callback
+          | 234
+        When sending json search query "Malibu"
+        Then a HTTP 400 is returned
+        Given the request parameters
+          | json_callback
+          | 234
+        When sending xml search query "Malibu"
+        Then the result is valid xml
+        Given the request parameters
+          | json_callback
+          | 234
+        When sending html search query "Malibu"
+        Then the result is valid html
 
      Scenario: Empty JSON search
-        When searching for "YHlERzzx"
-        Given format json
+        When sending json search query "YHlERzzx"
         Then exactly 0 results are returned
 
      Scenario: Empty JSONv2 search
-        When searching for "Flubb XdfESSaZx"
-        Given format jsonv2
+        When sending jsonv2 search query "Flubb XdfESSaZx"
         Then exactly 0 results are returned
 
      Scenario: Search for non-existing coordinates
-        When searching for "-21.0,-33.0"
+        When sending json search query "-21.0,-33.0"
         Then exactly 0 results are returned
 

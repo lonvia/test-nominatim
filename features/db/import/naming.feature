@@ -12,20 +12,44 @@ Feature: Import and search of names
         Then table placex contains
           | object | class  | type     | name
           | N1     | place  | locality | 'name' : 'FooBar'
-        And query "FooBar" returns N1
-        And query "foobar" returns N1
-        And query "fOObar" returns N1
-        And query "FOOBAR" returns N1
+        When sending query "FooBar"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "foobar"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "fOObar"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "FOOBAR"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
 
     Scenario: Multiple spaces in name
         Given the place nodes
           | osm_id | class | type      | name
           | 1      | place | locality  | 'name' : 'one two  three'
         When importing
-        Then query "one two three" returns N1
-        And query "one  two three" returns N1
-        And query "one two  three" returns N1
-        And query "   one two three" returns N1
+        When sending query "one two three"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "one   two three"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "one two  three"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "    one two three"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
 
     Scenario: Special characters in name
         Given the place nodes
@@ -36,18 +60,58 @@ Feature: Import and search of names
           | 4      | place | locality  | 'name' : 'space'
           | 5      | place | locality  | 'name' : 'mountain'
         When importing
-        Then query "Jim-Knopf-Str" returns N1
-        And query "Jim Knopf-Str" returns N1
-        And query "Jim Knopf Str" returns N1
-        And query "Jim/Knopf-Str" returns N1
-        And query "Smith/Weston" returns N2
-        And query "Smith Weston" returns N2
-        And query "Smith-Weston" returns N2
-        And query "space mountain" returns N3
-        And query "space-mountain" returns N3
-        And query "space/mountain" returns N3
-        And query "space\mountain" returns N3
-        And query "space(mountain)" returns N3
+        When sending query "Jim-Knopf-Str"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "Jim Knopf-Str"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "Jim Knopf Str"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "Jim/Knopf-Str"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "Jim-Knopfstr"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 1
+        When sending query "Smith/Weston"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 2
+        When sending query "Smith Weston"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 2
+        When sending query "Smith-Weston"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 2
+        When sending query "space mountain"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 3
+        When sending query "space-mountain"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 3
+        When sending query "space/mountain"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 3
+        When sending query "space\mountain"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 3
+        When sending query "space(mountain)"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | N        | 3
 
     Scenario: No copying name tag if only one name
         Given the place nodes
@@ -118,13 +182,21 @@ Feature: Import and search of names
           | R        | 1      | natural  | meadow      | 'name' : 'landuse1' | (0 0, 1 0, 1 1, 0 1, 0 0)
           | R        | 2      | landuse  | industrial  | 'name' : 'landuse2' | (0 0, -1 0, -1 -1, 0 -1, 0 0)
         When importing
-        Then query "landuse1" returns R1
-        And query "landuse2" returns R2
+        When sending query "landuse1"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 1
+        When sending query "landuse2"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 2
 
     Scenario: Postcode boundaries without ref
         Given the place areas
           | osm_type | osm_id | class    | type        | postcode | geometry
           | R        | 1      | boundary | postal_code | 12345    | (0 0, 1 0, 1 1, 0 1, 0 0)
         When importing
-        Then query "12345" returns R1
-
+        When sending query "12345"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 1

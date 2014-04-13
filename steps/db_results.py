@@ -66,19 +66,3 @@ def check_placex_missing(step, osmtyp, osmid):
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 
-    
-@step(u'query "([^"]*)" returns nothing')
-def check_simple_query(step, query):
-    query_cmd(step, query)
-    assert_equals(len(world.results), 0)
-
-
-@step(u'query "([^"]*)" returns (N|R|W)(\d+)')
-def check_simple_query(step, query, osmtype, osmid):
-    query_cmd(step, query)
-    assert_equals(len(world.results), 1)
-
-    res = world.results[0]
-    assert_equals(res['osm_type'], osmtype)
-    assert_equals(res['osm_id'], osmid)
-

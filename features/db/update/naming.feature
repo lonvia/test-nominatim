@@ -8,12 +8,19 @@ Feature: Update of names in place objects
           | osm_type | osm_id | class    | type        | postcode | geometry
           | R        | 1      | boundary | postal_code | 12345    | (0 0, 1 0, 1 1, 0 1, 0 0)
         When importing
-        Then query "12345" returns R1
+        And sending query "12345"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 1
         When updating place areas
           | osm_type | osm_id | class    | type        | postcode | geometry
           | R        | 1      | boundary | postal_code | 54321    | (0 0, 1 0, 1 1, 0 1, 0 0)
-        And query "12345" returns nothing
-        Then query "54321" returns R1
+        And sending query "12345"
+        Then exactly 0 results are returned
+        When sending query "54321"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 1
 
 
     Scenario: Delete postcode from postcode boundaries without ref
@@ -21,7 +28,10 @@ Feature: Update of names in place objects
           | osm_type | osm_id | class    | type        | postcode | geometry
           | R        | 1      | boundary | postal_code | 12345    | (0 0, 1 0, 1 1, 0 1, 0 0)
         When importing
-        Then query "12345" returns R1
+        And sending query "12345"
+        Then results contain
+         | ID | osm_type | osm_id
+         | 0  | R        | 1
         When updating place areas
           | osm_type | osm_id | class    | type        | geometry
           | R        | 1      | boundary | postal_code | (0 0, 1 0, 1 1, 0 1, 0 0)

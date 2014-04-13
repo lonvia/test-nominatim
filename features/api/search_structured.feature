@@ -3,26 +3,33 @@ Feature: Structured search queries
     structured queries
 
     Scenario: Country only
-        When searching for the following:
-          | type       | value
-          | country    | Canada
-        Given parameter addressdetails as "1"
-        Then xml result 1 has address details in order country,country_code
+        When sending json structured query with address
+          | country
+          | Canada
+        Then address of result 0 is
+          | type         | value
+          | country      | Canada
+          | country_code | ca
 
     Scenario: Postcode only
-        When searching for the following:
-          | type       | value
-          | postalcode | GU2 7UP
-        Given parameter addressdetails as "1"
-        Then result 1 has attribute class as "place"
-        And result 1 has attribute type as "postcode"
+        When sending json structured query with address
+          | postalcode
+          | 22547
+        Then at least 1 result is returned 
+        And results contain
+          | type
+          | post(al_)?code
+        And result addresses contain
+          | postcode
+          | 22547
 
 
 
     Scenario: Street, postcode and country
-        When searching for the following:
-          | type       | value
-          | street     | Old Palace Road
-          | postalcode | GU2 7UP
-          | country    | United Kingdom
+        When sending xml structured query with address
+          | street          | postalcode | country
+          | Old Palace Road | GU2 7UP    | United Kingdom
         Then at least 1 result is returned
+        Then result header contains
+          | attr        | value
+          | querystring | Old Palace Road, GU2 7UP, United Kingdom
