@@ -44,6 +44,23 @@ def setup_test_database(scenario):
         world.conn = psycopg2.connect(database=world.config.test_db)
         psycopg2.extras.register_hstore(world.conn, globally=False, unicode=True)
 
+@step('a wiped database')
+def db_setup_wipe_db(step):
+    """Explicit DB scenario setup only needed
+       to work around a bug where scenario outlines don't call
+       before_each_scenario correctly.
+    """
+    if hasattr(world, 'conn'):
+        world.conn.close()
+    conn = psycopg2.connect(database=world.config.template_db)
+    conn.set_isolation_level(0)
+    cur = conn.cursor()
+    cur.execute('DROP DATABASE IF EXISTS %s' % (world.config.test_db, ))
+    cur.execute('CREATE DATABASE %s TEMPLATE = %s' % (world.config.test_db, world.config.template_db))
+    conn.close()
+    world.conn = psycopg2.connect(database=world.config.test_db)
+    psycopg2.extras.register_hstore(world.conn, globally=False, unicode=True)
+
 
 @after.each_scenario
 def tear_down_test_database(scenario):

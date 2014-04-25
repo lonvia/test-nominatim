@@ -216,3 +216,83 @@ Feature: Import into placex
           | N36    | 30          | 30 |
           | N37    | 30          | 30 |
           | N38    | 28          | 0 |
+
+    Scenario: search and address ranks for boundaries are correctly assigned
+        Given the named place nodes
+          | osm_id | class    | type
+          | 1      | boundary | administrative
+        And the named place ways
+          | osm_id | class    | type           | geometry
+          | 10     | boundary | administrative | 10 10, 11 11
+        And the named place areas
+          | osm_type | osm_id | class    | type           | admin_level | geometry
+          | R        | 20     | boundary | administrative | 2           | (1 1, 2 2, 1 2, 1 1)
+          | R        | 21     | boundary | administrative | 32          | (3 3, 4 4, 3 4, 3 3)
+          | R        | 22     | boundary | nature_park    | 6           | (0 0, 1 0, 0 1, 0 0)
+          | R        | 23     | boundary | natural_reserve| 10          | (0 0, 1 1, 1 0, 0 0)
+        When importing
+        Then table placex has no entry for N1
+        And table placex has no entry for W10
+        And table placex contains
+          | object | rank_search | rank_address
+          | R20    | 4           | 4
+          | R21    | 30          | 30
+          | R22    | 12          | 0
+          | R23    | 20          | 0
+
+    Scenario Outline: minor highways droped without name, included with
+        Given the scene roads-with-pois
+        And a wiped database
+        And the place ways
+          | osm_id | class    | type   | geometry
+          | 1      | highway  | <type> | :w-south
+        And the named place ways
+          | osm_id | class    | type   | geometry
+          | 2      | highway  | <type> | :w-north
+        When importing
+        Then table placex has no entry for W1
+        And table placex contains
+          | object | rank_search | rank_address
+          | W2     | <rank>      | <rank>
+          
+    Examples:
+          | type          | rank
+          | service       | 27
+          | cycleway      | 27
+          | path          | 27
+          | footway       | 27
+          | steps         | 27
+          | bridleway     | 27
+          | track         | 26
+          | byway         | 26
+          | motorway_link | 27
+          | primary_link  | 27
+          | trunk_link    | 27
+          | secondary_link| 27
+          | tertiary_link | 27
+
+    Scenario: search and address ranks for highways correctly assigned
+        Given the scene roads-with-pois
+        And the place nodes
+          | osm_id | class    | type 
+          | 1      | highway  | bus_stop
+        And the place ways
+          | osm_id | class    | type         | geometry
+          | 1      | highway  | primary      | :w-south
+          | 2      | highway  | secondary    | :w-south
+          | 3      | highway  | tertiary     | :w-south
+          | 4      | highway  | residential  | :w-north
+          | 5      | highway  | unclassified | :w-north
+          | 6      | highway  | something    | :w-north
+        When importing
+        Then table placex contains
+          | object | rank_search | rank_address
+          | N1     | 30          | 30
+          | W1     | 26          | 26
+          | W2     | 26          | 26
+          | W3     | 26          | 26
+          | W4     | 26          | 26
+          | W5     | 26          | 26
+          | W6     | 26          | 26
+
+
