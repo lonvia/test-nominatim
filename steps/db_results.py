@@ -55,9 +55,9 @@ def check_place_content(step):
                         assert_equals(res[k], val)
                     elif k in ('parent_place_id', 'linked_place_id'):
                         pid = world.get_placeid(v)
-                        assert_equals(pid, res[k], "Results for column '%s' differ: '%s' != '%s'" % (k, pid, res[k]))
+                        assert_equals(pid, res[k], "Results for '%s'/'%s' differ: '%s' != '%s'" % (line['object'], k, pid, res[k]))
                     else:
-                        assert_equals(str(res[k]), v, "Results for column '%s' differ: '%s' != '%s'" % (k, str(res[k]), v))
+                        assert_equals(str(res[k]), v, "Results for '%s'/'%s' differ: '%s' != '%s'" % (line['object'], k, str(res[k]), v))
 
 @step(u'table placex has no entry for (N|R|W)(\d+)')
 def check_placex_missing(step, osmtyp, osmid):
