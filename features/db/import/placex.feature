@@ -77,7 +77,7 @@ Feature: Import into placex
     Scenario: postcode boundary without postcode is dropped
         Given the place areas
           | osm_type | osm_id | class    | type        | geometry
-          | R        | 1      | boundary | postal_code | (0 0, 1 0, 1 1, 0 1, 0 0)
+          | R        | 1      | boundary | postal_code | poly-area:0.1
         When importing
         Then table placex has no entry for R1
 
