@@ -23,6 +23,7 @@ class NominatimConfig:
         self.test_db = os.environ.get('TEST_DB', 'test_nominatim')
         self.local_settings_file = os.environ.get('NOMINATIM_SETTINGS', '/tmp/nominatim_settings.php')
         self.reuse_template = 'NOMINATIM_REUSE_TEMPLATE' in os.environ
+        self.keep_scenario_db = 'NOMINATIM_KEEP_SCENARIO_DB' in os.environ
         os.environ['NOMINATIM_SETTINGS'] = '/tmp/nominatim_settings.php'
 
         scriptpath = os.path.dirname(os.path.abspath(__file__))

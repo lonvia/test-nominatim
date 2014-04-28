@@ -68,7 +68,7 @@ def tear_down_test_database(scenario):
     """
     if hasattr(world, 'conn'):
         world.conn.close()
-    if scenario.feature.tags is not None and 'DB' in scenario.feature.tags:
+    if scenario.feature.tags is not None and 'DB' in scenario.feature.tags and not world.config.keep_scenario_db:
         conn = psycopg2.connect(database=world.config.template_db)
         conn.set_isolation_level(0)
         cur = conn.cursor()
@@ -152,6 +152,38 @@ def import_place_table_nodes(step, named, osmtype):
     cur.close()
     world.conn.commit()
 
+
+@step(u'the relations')
+def import_fill_planet_osm_rels(step):
+    """Adds a raw relation to the osm2pgsql table.
+       Three columns need to be suplied: id, tags, members.
+    """
+    cur = world.conn.cursor()
+    for line in step.hashes:
+        members = []
+        parts = { 'n' : [], 'w' : [], 'r' : [] }
+        for mem in line['members'].split(','):
+            memparts = mem.strip().split(':', 2)
+            memid = memparts[0].lower()
+            parts[memid[0]].append(int(memid[1:]))
+            members.append(memid)
+            if len(memparts) == 2:
+                members.append(memparts[1])
+            else:
+                members.append('')
+        tags = []
+        for k,v in world.make_hash(line['tags']).iteritems():
+            tags.extend((k,v))
+
+        cur.execute("""INSERT INTO planet_osm_rels 
+                      (id, way_off, rel_off, parts, members, tags, pending)
+                      VALUES (%s, %s, %s, %s, %s, %s, false)""",
+                   (line['id'], len(parts['n']), len(parts['n']) + len(parts['w']),
+                   parts['n'] + parts['w'] + parts['r'], members, tags))
+    world.conn.commit()
+        
+
+############### import and update steps #######################################
 
 @step(u'importing')
 def import_database(step):
