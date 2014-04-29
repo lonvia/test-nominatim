@@ -32,11 +32,13 @@ public:
     }
 
     void way(const osmium::Way& way) {
-        print_geometry(way.tags(), m_factory.create_linestring(way));
+        if (!way.is_closed() || !way.tags().get_value_by_key("area"))
+            print_geometry(way.tags(), m_factory.create_linestring(way));
     }
 
     void area(const osmium::Area& area) {
-        print_geometry(area.tags(), m_factory.create_multipolygon(area));
+        if (!area.from_way() || area.tags().get_value_by_key("area"))
+            print_geometry(area.tags(), m_factory.create_multipolygon(area));
     }
 
     void close() {
@@ -85,10 +87,10 @@ int main(int argc, char* argv[]) {
     osmium::io::Reader reader2(input_filename);
     osmium::apply(reader2, location_handler, export_handler, collector.handler());
     reader2.close();
+    osmium::apply(collector, export_handler);
     export_handler.close();
     std::cerr << "Pass 2 done\n";
 
-    osmium::apply(collector, export_handler);
 
     google::protobuf::ShutdownProtobufLibrary();
 
