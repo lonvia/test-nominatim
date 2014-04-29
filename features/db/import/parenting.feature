@@ -53,9 +53,9 @@ Feature: Parenting of objects
          | 3      | place | house | south | :p-S1
          | 4      | place | house | north | :p-S2
         And the place ways
-         | osm_id | class   | type        | name             | geometry
-         | 1      | highway | residential | 'name' : 'north' | :w-north
-         | 2      | highway | residential | 'name' : 'south' | :w-south
+         | osm_id | class   | type        | name  | geometry
+         | 1      | highway | residential | north | :w-north
+         | 2      | highway | residential | south | :w-south
         When importing
         Then table placex contains
          | object | parent_place_id
@@ -73,9 +73,9 @@ Feature: Parenting of objects
          | 3      | place | house | abcdef | :p-S1
          | 4      | place | house | abcdef | :p-S2
         And the place ways
-         | osm_id | class   | type        | name              | geometry
-         | 1      | highway | residential | 'name' : 'abcdef' | :w-north
-         | 2      | highway | residential | 'name' : 'abcdef' | :w-south
+         | osm_id | class   | type        | name   | geometry
+         | 1      | highway | residential | abcdef | :w-north
+         | 2      | highway | residential | abcdef | :w-south
         When importing
         Then table placex contains
          | object | parent_place_id
@@ -93,9 +93,9 @@ Feature: Parenting of objects
          | 3      | place | house | abcdef | :p-S1
          | 4      | place | house | abcdef | :p-S2
         And the place ways
-         | osm_id | class   | type        | name             | geometry
-         | 1      | highway | residential | 'name' : 'abcde' | :w-north
-         | 2      | highway | residential | 'name' : 'abcde' | :w-south
+         | osm_id | class   | type        | name  | geometry
+         | 1      | highway | residential | abcde | :w-north
+         | 2      | highway | residential | abcde | :w-south
         When importing
         Then table placex contains
          | object | parent_place_id
@@ -104,7 +104,39 @@ Feature: Parenting of objects
          | N3     | W2
          | N4     | W2
 
-    Scenario: Untagged address in simple associated street relation
+    Scenario: addr:place address
+        Given the scene road-with-alley
+        And the place nodes
+         | osm_id | class | type   | addr_place | geometry
+         | 1      | place | house  | myhamlet   | :n-alley
+        And the place nodes
+         | osm_id | class | type   | name     | geometry
+         | 2      | place | hamlet | myhamlet | :n-main-west
+        And the place ways
+         | osm_id | class   | type        | name     | geometry
+         | 1      | highway | residential | myhamlet | :w-main
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | N2
+
+    Scenario: addr:street is preferred over addr:place
+        Given the scene road-with-alley
+        And the place nodes
+         | osm_id | class | type   | addr_place | street  | geometry
+         | 1      | place | house  | myhamlet   | mystreet| :n-alley
+        And the place nodes
+         | osm_id | class | type   | name     | geometry
+         | 2      | place | hamlet | myhamlet | :n-main-west
+        And the place ways
+         | osm_id | class   | type        | name     | geometry
+         | 1      | highway | residential | mystreet | :w-main
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W1
+
+     Scenario: Untagged address in simple associated street relation
         Given the scene road-with-alley
         And the place nodes
          | osm_id | class | type  | geometry
@@ -112,9 +144,9 @@ Feature: Parenting of objects
          | 2      | place | house | :n-corner
          | 3      | place | house | :n-main-west
         And the place ways
-         | osm_id | class   | type        | name           | geometry
-         | 1      | highway | residential | 'name' : 'foo' | :w-main
-         | 2      | highway | service     | 'name' : 'bar' | :w-alley
+         | osm_id | class   | type        | name | geometry
+         | 1      | highway | residential | foo  | :w-main
+         | 2      | highway | service     | bar  | :w-alley
         And the relations
          | id | members            | tags
          | 1  | W1:street,N1,N2,N3 | 'type' : 'associatedStreet'
@@ -147,3 +179,186 @@ Feature: Parenting of objects
          | N1     | W1
          | N2     | W1
          | N3     | W1
+
+    ### Scenario 10
+    Scenario: Associated street relation overrides addr:street
+        Given the scene road-with-alley
+        And the place nodes
+         | osm_id | class | type  | street | geometry
+         | 1      | place | house | bar    | :n-alley
+        And the place ways
+         | osm_id | class   | type        | name | geometry
+         | 1      | highway | residential | foo  | :w-main
+         | 2      | highway | residential | bar  | :w-alley
+        And the relations
+         | id | members            | tags
+         | 1  | W1:street,N1,N2,N3 | 'type' : 'associatedStreet'
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W1
+
+    Scenario: Building without tags, closest street from center point
+        Given the scene building-on-street-corner
+        And the named place ways
+         | osm_id | class    | type        | geometry
+         | 1      | building | yes         | :w-building
+         | 2      | highway  | primary     | :w-WE
+         | 3      | highway  | residential | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | W1     | W3
+
+    Scenario: Building with addr:street tags
+        Given the scene building-on-street-corner
+        And the named place ways
+         | osm_id | class    | type | street | geometry
+         | 1      | building | yes  | bar    | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | W1     | W2
+
+    Scenario: Building with addr:place tags
+        Given the scene building-on-street-corner
+        And the place nodes
+         | osm_id | class | type    | name | geometry
+         | 1      | place | village | bar  | :n-outer
+        And the named place ways
+         | osm_id | class    | type | addr_place | geometry
+         | 1      | building | yes  | bar        | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | W1     | N1
+
+    Scenario: Building in associated street relation
+        Given the scene building-on-street-corner
+        And the named place ways
+         | osm_id | class    | type | geometry
+         | 1      | building | yes  | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        And the relations
+         | id | members            | tags
+         | 1  | W1:house,W2:street | 'type' : 'associatedStreet'
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | W1     | W2
+
+    Scenario: Building in associated street relation overrides addr:street
+        Given the scene building-on-street-corner
+        And the named place ways
+         | osm_id | class    | type | street | geometry
+         | 1      | building | yes  | foo    | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        And the relations
+         | id | members            | tags
+         | 1  | W1:house,W2:street | 'type' : 'associatedStreet'
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | W1     | W2
+
+    Scenario: Wrong member in associated street relation is ignored
+        Given the scene building-on-street-corner
+        And the named place nodes
+         | osm_id | class | type  | geometry
+         | 1      | place | house | :n-outer
+        And the named place ways
+         | osm_id | class    | type | street | geometry
+         | 1      | building | yes  | foo    | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        And the relations
+         | id | members                      | tags
+         | 1  | N1:house,W1:street,W3:street | 'type' : 'associatedStreet'
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W3
+
+    Scenario: POIs in building inherit address
+        Given the scene building-on-street-corner
+        And the named place nodes
+         | osm_id | class   | type       | geometry
+         | 1      | amenity | bank       | :n-inner
+         | 2      | shop    | bakery     | :n-edge-NS
+         | 3      | shop    | supermarket| :n-edge-WE
+        And the place ways
+         | osm_id | class    | type | street | addr_place | housenumber | geometry
+         | 1      | building | yes  | foo    | nowhere    | 3           | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id | street | addr_place | housenumber
+         | W1     | W3              | foo    | nowhere    | 3
+         | N1     | W3              | foo    | nowhere    | 3
+         | N2     | W3              | foo    | nowhere    | 3
+         | N3     | W3              | foo    | nowhere    | 3
+
+    Scenario: POIs don't inherit from streets
+        Given the scene building-on-street-corner
+        And the named place nodes
+         | osm_id | class   | type       | geometry
+         | 1      | amenity | bank       | :n-inner
+        And the place ways
+         | osm_id | class    | type | street | addr_place | housenumber | geometry
+         | 1      | highway  | path | foo    | nowhere    | 3           | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 3      | highway  | residential | foo  | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id | street | addr_place | housenumber
+         | N1     | W3              | None   | None       | None
+
+    Scenario: POIs with own address do not inherit building address
+        Given the scene building-on-street-corner
+        And the named place nodes
+         | osm_id | class   | type       | street | geometry
+         | 1      | amenity | bank       | bar    | :n-inner
+        And the named place nodes
+         | osm_id | class   | type       | housenumber | geometry
+         | 2      | shop    | bakery     | 4           | :n-edge-NS
+        And the named place nodes
+         | osm_id | class   | type       | addr_place  | geometry
+         | 3      | shop    | supermarket| nowhere     | :n-edge-WE
+        And the place nodes
+         | osm_id | class | type              | name     | geometry
+         | 4      | place | isolated_dwelling | theplace | :n-outer
+        And the place ways
+         | osm_id | class    | type | addr_place | housenumber | geometry
+         | 1      | building | yes  | theplace   | 3           | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        When importing
+        Then table placex contains
+         | object | parent_place_id | street | addr_place | housenumber
+         | W1     | N4              | None   | theplace   | 3
+         | N1     | W2              | bar    | None       | None
+         | N2     | W3              | None   | None       | 4
+         | N3     | W2              | None   | nowhere    | None
+

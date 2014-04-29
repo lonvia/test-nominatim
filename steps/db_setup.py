@@ -78,7 +78,10 @@ def tear_down_test_database(scenario):
 
 def _format_placex_cols(cols, geomtype, force_name):
     if 'name' in cols:
-        cols['name'] = world.make_hash(cols['name'])
+        if cols['name'].startswith("'"):
+            cols['name'] = world.make_hash(cols['name'])
+        else:
+            cols['name'] = { 'name' : cols['name'] }
     elif force_name:
         cols['name'] = { 'name' : base64.urlsafe_b64encode(os.urandom(int(random.random()*30))) }
     if 'extratags' in cols:
