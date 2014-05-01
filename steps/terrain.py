@@ -73,6 +73,9 @@ def split_id(oid):
 @world.absorb
 def get_placeid(oid):
     """ Tries to retrive the place_id for a unique identifier. """
+    if oid[0].isdigit():
+        return int(oid)
+
     osmtype, osmid, cls = world.split_id(oid)
     cur = world.conn.cursor()
     if cls is None:

@@ -186,6 +186,22 @@ def import_fill_planet_osm_rels(step):
     world.conn.commit()
         
 
+@step(u'the ways')
+def import_fill_planet_osm_ways(step):
+    cur = world.conn.cursor()
+    for line in step.hashes:
+        if 'tags' in line:
+            tags = world.make_hash(line['tags'])
+        else:
+            tags = None
+        nodes = [int(x.strip()) for x in line['nodes'].split(',')]
+
+        cur.execute("""INSERT INTO planet_osm_ways
+                       (id, nodes, tags, pending)
+                       VALUES (%s, %s, %s, false)""",
+                    (line['id'], nodes, tags))
+    world.conn.commit()
+
 ############### import and update steps #######################################
 
 @step(u'importing')

@@ -362,3 +362,71 @@ Feature: Parenting of objects
          | N2     | W3              | None   | None       | 4
          | N3     | W2              | None   | nowhere    | None
 
+    ### Scenario 20
+    Scenario: POIs parent a road if and only if they are attached to it
+        Given the scene points-on-roads
+        And the named place nodes
+         | osm_id | class   | type     | street   | geometry
+         | 1      | highway | bus_stop | North St | :n-SE
+         | 2      | highway | bus_stop | South St | :n-NW
+         | 3      | highway | bus_stop | North St | :n-S-unglued
+         | 4      | highway | bus_stop | South St | :n-N-unglued
+        And the place ways
+         | osm_id | class   | type         | name     | geometry
+         | 1      | highway | secondary    | North St | :w-north
+         | 2      | highway | unclassified | South St | :w-south
+        And the ways
+         | id | nodes
+         | 1  | 100,101,2,103,104
+         | 2  | 200,201,1,202,203
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W2
+         | N2     | W1
+         | N3     | W1
+         | N4     | W2
+
+    Scenario: POIs do not parent non-roads they are attached to
+        Given the scene points-on-roads
+        And the named place nodes
+         | osm_id | class   | type     | street   | geometry
+         | 1      | highway | bus_stop | North St | :n-SE
+         | 2      | highway | bus_stop | South St | :n-NW
+        And the place ways
+         | osm_id | class   | type         | name     | geometry
+         | 1      | landuse | residential  | North St | :w-north
+         | 2      | waterway| river        | South St | :w-south
+        And the ways
+         | id | nodes
+         | 1  | 100,101,2,103,104
+         | 2  | 200,201,1,202,203
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | 0
+         | N2     | 0
+
+    Scenario: POIs on building outlines inherit associated street relation
+        Given the scene building-on-street-corner
+        And the named place nodes
+         | osm_id | class  | type  | geometry
+         | 1      | place  | house | :n-edge-NS
+        And the named place ways
+         | osm_id | class    | type | geometry
+         | 1      | building | yes  | :w-building
+        And the place ways
+         | osm_id | class    | type        | name | geometry
+         | 2      | highway  | primary     | bar  | :w-WE
+         | 3      | highway  | residential | foo  | :w-NS
+        And the relations
+         | id | members            | tags
+         | 1  | W1:house,W2:street | 'type' : 'associatedStreet'
+        And the ways
+         | id | nodes
+         | 1  | 100,1,101,102,100
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W2
+
