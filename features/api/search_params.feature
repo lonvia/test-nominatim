@@ -80,6 +80,22 @@ Feature: Search queries
           | display_name
           | [^,]*(?i)restaurant.*
 
+    Scenario: bounded search remains within viewbox, even with no results
+        Given the request parameters
+         | bounded | viewbox
+         | 1       | -5.662003,43.54285,-5.6563282,43.5403125
+         When sending json search query "restaurant"
+        Then less than 1 result is returned
+
+    Scenario: bounded search remains within viewbox with results
+        Given the request parameters
+         | bounded | viewbox
+         | 1       | -5.662003,43.55,-5.6563282,43.5403125
+        When sending json search query "restaurant"
+         | lon          | lat
+         | >= -5.662003 | >= 43.5403125
+         | <= -5.6563282| <= 43.55
+
     Scenario: Prefer results within viewbox
         Given the request parameters
           | accept-language

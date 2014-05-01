@@ -24,3 +24,10 @@ Feature: Result order for Geocoding
         | country | city       | street
         | gb      | London     | Main St
         | gb      | Manchester | Central Street
+
+    # https://trac.openstreetmap.org/ticket/5094
+    Scenario: housenumbers are ordered by complete match first
+        When sending json search query "4 Докукина Москва" with address
+        Then result addresses contain
+          | ID | house_number
+          | 0  | 4

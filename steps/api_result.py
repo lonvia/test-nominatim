@@ -145,7 +145,7 @@ def api_result_header_contains(step):
 
 @step(u'results contain$')
 def api_result_contains(step):
-    step.given('the result is valid')
+    step.given('at least 1 result is returned')
     for line in step.hashes:
         if 'ID' in line:
             reslist = (world.results[int(line['ID'])],)
@@ -155,8 +155,16 @@ def api_result_contains(step):
             if k != 'ID':
                 for curres in reslist:
                     assert_in(k, curres)
-                    m = re.match("%s$" % (v,), curres[k])
-                    assert_is_not_none(m, msg="field %s does not match: %s$ != %s." % (k, v, curres[k]))
+                    if v[0] in '<>=':
+                        # mathematical operation
+                        evalexp = '%s %s' % (curres[k], v)
+                        res = eval(evalexp)
+                        logger.debug('Evaluating: %s = %s' % (res, evalexp))
+                        assert_true(res, "Evaluation failed: %s" % (evalexp, ))
+                    else:
+                        # regex match
+                        m = re.match("%s$" % (v,), curres[k])
+                        assert_is_not_none(m, msg="field %s does not match: %s$ != %s." % (k, v, curres[k]))
 
 
 @step(u'result addresses contain$')
