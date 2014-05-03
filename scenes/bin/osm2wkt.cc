@@ -8,6 +8,7 @@
 
 #include <osmium/area/assembler.hpp>
 #include <osmium/area/collector.hpp>
+#include <osmium/area/problem_reporter_exception.hpp>
 #include <osmium/geom/wkt.hpp>
 #include <osmium/handler.hpp>
 #include <osmium/handler/node_locations_for_ways.hpp>
@@ -70,7 +71,8 @@ int main(int argc, char* argv[]) {
     std::string input_filename {argv[1]};
 
     typedef osmium::area::Assembler area_assembler_type;
-    area_assembler_type assembler;
+    osmium::area::ProblemReporterException problem_reporter;
+    area_assembler_type assembler(&problem_reporter);
     osmium::area::Collector<area_assembler_type> collector(assembler);
 
     std::cerr << "Pass 1...\n";
