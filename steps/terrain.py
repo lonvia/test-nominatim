@@ -148,8 +148,8 @@ def db_template_setup():
     world.run_nominatim_script('setup', 'create-functions', 'create-tables', 'create-partition-tables', 'create-partition-functions', 'load-data', 'create-search-indices')
 
 
-
-@after.all
+# Leave the table around so it can be reused again after a non-reuse test round.
+#@after.all
 def db_template_teardown(total):
     """ Set up a template database, containing all tables
         but not yet any functions.

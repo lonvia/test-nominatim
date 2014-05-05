@@ -34,7 +34,7 @@ def check_placex_names(step, osmtyp, osmid):
 
 
 @step(u'table placex contains$')
-def check_place_content(step):
+def check_placex_content(step):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
         osmtype, osmid, cls = world.split_id(line['object'])
@@ -63,6 +63,44 @@ def check_place_content(step):
 def check_placex_missing(step, osmtyp, osmid):
     cur = world.conn.cursor()
     cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    numres = cur.fetchone()[0]
+    assert_equals (numres, 0)
+
+@step(u'table search_name contains$')
+def check_search_name_content(step):
+    cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    for line in step.hashes:
+        placeid = world.get_placeid(line['place_id'])
+        cur.execute('SELECT * FROM search_name WHERE place_id = %s', (placeid,))
+        assert(cur.rowcount > 0)
+        for res in cur:
+            for k,v in line.iteritems():
+                if k in ('search_rank', 'address_rank'):
+                    assert_equals(int(v), res[k], "Results for '%s'/'%s' differ: '%s' != '%d'" % (line['place_id'], k, v, res[k]))
+                elif k in ('importance'):
+                    assert_equals(float(v), res[k], "Results for '%s'/'%s' differ: '%s' != '%d'" % (line['place_id'], k, v, res[k]))
+                elif k in ('name_vector', 'nameaddress_vector'):
+                    terms = [x.strip().replace('#', ' ') for x in v.split(',')]
+                    cur.execute('SELECT word_id, word_token FROM word, (SELECT unnest(%s) as term) t WHERE word_token = make_standard_name(t.term)', (terms,))
+                    assert cur.rowcount >= len(terms)
+                    for wid in cur:
+                        assert_in(wid['word_id'], res[k], "Missing term for %s/%s: %s" % (line['place_id'], k, wid['word_token']))
+                elif k in ('country_code'):
+                    assert_equals(v, res[k], "Results for '%s'/'%s' differ: '%s' != '%d'" % (line['place_id'], k, v, res[k]))
+                elif k == 'place_id':
+                    pass
+                else:
+                    raise Exception("Cannot handle field %s in search_name table" % (k, ))
+
+
+@step(u'table search_name has no entry for (.*)')
+def check_placex_missing(step, osmid):
+    """ Checks if there is an entry in the search index for the
+        given place object.
+    """
+    cur = world.conn.cursor()
+    placeid = world.get_placeid(osmid)
+    cur.execute('SELECT count(*) FROM search_name WHERE place_id =%s', (placeid,))
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 
