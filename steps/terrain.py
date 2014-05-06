@@ -5,6 +5,7 @@ import os
 import subprocess
 import psycopg2
 from shapely.wkt import loads as wkt_load
+from shapely.ops import linemerge
 
 class NominatimConfig:
 
@@ -62,6 +63,8 @@ def split_id(oid):
         identifier instead that is of the form <osmtype><osmid>[:class].
     """
     oid = oid.strip()
+    if oid == 'None':
+        return None, None, None
     osmtype = oid[0]
     assert_in(osmtype, ('R','N','W'))
     if ':' in oid:
@@ -77,6 +80,8 @@ def get_placeid(oid):
         return int(oid)
 
     osmtype, osmid, cls = world.split_id(oid)
+    if osmtype is None:
+        return None
     cur = world.conn.cursor()
     if cls is None:
         q = 'SELECT place_id FROM placex where osm_type = %s and osm_id = %s'
@@ -192,13 +197,21 @@ def get_scene_geometry(name):
     if not ':' in name:
         # Not a scene description
         return None
+    
+    geoms = []
+    for obj in name.split('+'):
+        oname = obj.strip()
+        if oname.startswith(':'):
+            geoms.append(world.current_scene[oname[1:]])
+        else:
+            scene, obj = oname.split(':', 2)
+            oldscene = world.current_scene
+            world.load_scene(scene)
+            wkt = world.current_scene[obj]
+            world.current_scene = oldscene
+            geoms.append(wkt)
 
-    if name.startswith(':'):
-        return world.current_scene[name[1:]]
+    if len(geoms) == 1:
+        return geoms[0]
     else:
-        scene, obj = name.split(':', 2)
-        oldscene = world.current_scene
-        world.load_scene(scene)
-        wkt = world.current_scene[obj]
-        world.current_scene = oldscene
-        return wkt
+        return linemerge(geoms)
