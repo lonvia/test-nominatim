@@ -2,16 +2,16 @@
 Feature: Linking of places
     Tests for correctly determining linked places
 
-    @Fail
     Scenario: Waterways are linked when in waterway relations
         Given the scene split-road
         And the place ways
          | osm_type | osm_id | class    | type  | name  | geometry
-         | W        | 1      | waterway | river | Rhein | :w-2
+         | W        | 1      | waterway | river | Rhein2| :w-2
+         | W        | 2      | waterway | river | Rhein2| :w-3
          | R        | 1      | waterway | river | Rhein | :w-1 + :w-2 + :w-3
         And the relations
          | id | members            | tags
-         | 1  | W1                 | 'type' : 'waterway'
+         | 1  | W1,W2:main_stream  | 'type' : 'waterway'
         When importing
         Then table placex contains
          | object | linked_place_id
@@ -22,7 +22,6 @@ Feature: Linking of places
          | osm_type
          | R
 
-    @Fail
     Scenario: Waterways are not linked when in non-waterway relations
         Given the scene split-road
         And the place ways
@@ -43,8 +42,7 @@ Feature: Linking of places
           |  0 | R
           |  1 | W
 
-    @Fail
-    Scenario: Waterways are not linked when in waterway relations with different name
+    Scenario: Waterways are not linked when in waterway relations is a side stream
         Given the scene split-road
         And the place ways
          | osm_type | osm_id | class    | type  | name   | geometry
@@ -52,7 +50,7 @@ Feature: Linking of places
          | R        | 1      | waterway | river | Rhein  | :w-1 + :w-2 + :w-3
         And the relations
          | id | members            | tags
-         | 1  | W1                 | 'type' : 'waterway'
+         | 1  | W1:side_stream     | 'type' : 'waterway'
         When importing
         Then table placex contains
          | object | linked_place_id
