@@ -33,16 +33,17 @@ def check_placex_names(step, osmtyp, osmid):
         assert_equals(len(names), 0)
 
 
+
 @step(u'table placex contains$')
 def check_placex_content(step):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
         osmtype, osmid, cls = world.split_id(line['object'])
+        q = 'SELECT *, ST_X(centroid) as clat, ST_Y(centroid) as clon FROM placex where osm_type = %s and osm_id = %s'
         if cls is None:
-            q = 'SELECT * FROM placex where osm_type = %s and osm_id = %s'
             params = (osmtype, osmid)
         else:
-            q = 'SELECT * FROM placex where osm_type = %s and osm_id = %s and class = %s'
+            q = q + ' and class = %s'
             params = (osmtype, osmid, cls)
         cur.execute(q, params)
         assert(cur.rowcount > 0)
@@ -56,6 +57,8 @@ def check_placex_content(step):
                     elif k in ('parent_place_id', 'linked_place_id'):
                         pid = world.get_placeid(v)
                         assert_equals(pid, res[k], "Results for '%s'/'%s' differ: '%s' != '%s'" % (line['object'], k, pid, res[k]))
+                    elif k == 'centroid':
+                        world.match_geometry((res['clat'], res['clon']), v)
                     else:
                         assert_equals(str(res[k]), v, "Results for '%s'/'%s' differ: '%s' != '%s'" % (line['object'], k, str(res[k]), v))
 

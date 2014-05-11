@@ -102,7 +102,7 @@ def _insert_place_table_nodes(places, force_name):
     for line in places:
         cols = dict(line)
         cols['osm_type'] = 'N'
-        _format_placex_cols(cols, 'ST_POINT', force_name)
+        _format_placex_cols(cols, 'POINT', force_name)
         if 'geometry' in cols:
             coords = cols.pop('geometry')
         else:

@@ -4,8 +4,12 @@ import logging
 import os
 import subprocess
 import psycopg2
+import re
+from haversine import haversine
 from shapely.wkt import loads as wkt_load
 from shapely.ops import linemerge
+
+logger = logging.getLogger(__name__)
 
 class NominatimConfig:
 
@@ -92,6 +96,31 @@ def get_placeid(oid):
     cur.execute(q, params)
     assert_equals (cur.rowcount, 1)
     return cur.fetchone()[0]
+
+
+@world.absorb
+def match_geometry(coord, matchstring):
+    m = re.match(r'([-0-9.]+),\s*([-0-9.]+)\s*(?:\+-([0-9.]+)([a-z]+)?)?', matchstring)
+    assert_is_not_none(m, "Invalid match string")
+
+    logger.debug("Distmatch: %s/%s %s %s" % (m.group(1), m.group(2), m.group(3), m.group(4) ))
+    dist = haversine(coord, (float(m.group(1)), float(m.group(2))))
+
+    if m.group(3) is not None:
+        expdist = float(m.group(3))
+        if m.group(4) is not None:
+            if m.group(4) == 'm':
+                expdist = expdist/1000
+            elif m.group(4) == 'km':
+                pass
+            else:
+                assert (False, "Unknown unit '%s' in geometry match" % (m.group(4), ))
+    else:
+        expdist = 0
+
+    logger.debug("Distances expected: %f, got: %f" % (expdist, dist))
+    assert dist <= expdist, "Geometry too far away, expected: %f, got: %f" % (expdist, dist)
+
 
 
 @world.absorb

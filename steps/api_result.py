@@ -152,7 +152,10 @@ def api_result_contains(step):
         else:
             reslist = world.results
         for k,v in line.iteritems():
-            if k != 'ID':
+            if k == 'latlon':
+                for curres in reslist:
+                    world.match_geometry((float(curres['lat']), float(curres['lon'])), v)
+            elif k != 'ID':
                 for curres in reslist:
                     assert_in(k, curres)
                     if v[0] in '<>=':

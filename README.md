@@ -13,6 +13,7 @@ Prerequisites
  * lettuce framework (http://lettuce.it/)
  * nose (https://nose.readthedocs.org)
  * pytidylib (http://countergram.com/open-source/pytidylib)
+ * haversine (https://github.com/mapado/haversine)
 
 Usage
 =====

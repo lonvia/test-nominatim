@@ -95,3 +95,66 @@ Feature: API regression tests
         Then results contain
          | ID | display_name
          | 0  | .*, Troisdorf, .*
+
+    Scenario: trac #2758
+        When sending json search query "6а, полуботка, чернигов" with address
+        Then result addresses contain
+         | ID | house_number
+         | 0  | 6а
+
+    Scenario: trac #2790
+        When looking up coordinates 49.0942079697809,8.27565898861822
+        Then result addresses contain
+         | ID | road          | city     | country
+         | 0  | Daimlerstraße | Jockgrim | Deutschland
+
+    Scenario: trac #2794
+        When sending json search query "4008"
+        Then results contain
+         | ID | class | type
+         | 0  | place | postcode
+
+    Scenario: trac #2797
+        When sending json search query "Philippstr.4, 52349 Düren" with address
+        Then result addresses contain
+         | ID | road           | city
+         | 0  | Philippstraße | Düren
+
+    Scenario: trac #2830
+        When sending json search query "528, Merkley Drive, K4A 1N5,CA" with address
+        Then result addresses contain
+         | ID | house_number | road          | postcode | country
+         | 0  | 528          | Merkley Drive | K4A 1N5  | Canada
+
+    Scenario: trac #2830
+        When sending json search query "K4A 1N5,CA"
+        Then results contain
+         | ID | class | type     | display_name
+         | 0  | place | postcode | .*, Canada
+
+    Scenario: trac #2845
+        When sending json search query "Leliestraat 31, Zwolle" with address
+        Then result addresses contain
+         | ID | city
+         | 0  | Zwolle
+
+    Scenario: trac #2852
+        When sending json search query "berlinerstrasse, leipzig" with address
+        Then result addresses contain
+         | road
+         | Berliner Straße
+
+    Scenario: trac #2871
+        When looking up coordinates -33.906895553,150.99609375
+        Then result addresses contain
+         | ID | city       | postcode | country
+         | 0  | Parramatta | 2197     | Australia
+
+    Scenario: trac #2974
+        When sending json search query "Azadi Square, Faruj" with address
+        Then result addresses contain
+         | ID | road        | city
+         | 0  | ميدان آزادي | فاروج
+        And results contain
+         | ID | latlon
+         | 0  | 37.2323,58.2193 +-500m
