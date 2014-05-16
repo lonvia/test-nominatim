@@ -251,13 +251,15 @@ def update_delete_places(step, places):
 
 
 
-@step(u'sending query "(.*)"$')
-def query_cmd(step, query):
+@step(u'sending query "(.*)"( with dups)?$')
+def query_cmd(step, query, with_dups):
     """ Results in standard query output. The same tests as for API queries
         can be used.
     """
     cmd = [os.path.join(world.config.source_dir, 'utils', 'query.php'),
            '--search', query]
+    if with_dups is not None:
+        cmd.append('--nodedupe')
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (outp, err) = proc.communicate()
     assert (proc.returncode == 0), "query.php failed with message: %s" % err

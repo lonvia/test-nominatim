@@ -157,4 +157,23 @@ Feature: API regression tests
          | 0  | ميدان آزادي | فاروج
         And results contain
          | ID | latlon
-         | 0  | 37.2323,58.2193 +-500m
+         | 0  | 37.2323,58.2193 +-1km
+
+     Scenario: trac #2981
+        When sending json search query "Ohmstraße 7, Berlin" with address
+        Then at least 2 results are returned
+        And result addresses contain
+         | house_number | road      | state
+         | 7            | Ohmstraße | Berlin
+
+     Scenario: trac #3049
+        When sending json search query "Soccer City"
+        Then results contain
+         | ID | class   | type    | latlon
+         | 0  | leisure | stadium | -26.2347261,27.982645 +-50m
+
+     Scenario: trac #3130
+        When sending json search query "Old Way, Frinton"
+        Then results contain
+         | ID | class   | latlon
+         | 0  | highway | 51.8324206,1.2447352 +-100m
