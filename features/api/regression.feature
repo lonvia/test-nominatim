@@ -1,7 +1,6 @@
 Feature: API regression tests
     Tests error cases reported in tickets.
 
-    @Fail
     Scenario Outline: github #36
         When sending json search query "<query>" with address
         Then result addresses contain
@@ -105,7 +104,7 @@ Feature: API regression tests
     Scenario: trac #2790
         When looking up coordinates 49.0942079697809,8.27565898861822
         Then result addresses contain
-         | ID | road          | city     | country
+         | ID | road          | village  | country
          | 0  | Daimlerstraße | Jockgrim | Deutschland
 
     Scenario: trac #2794
@@ -117,7 +116,7 @@ Feature: API regression tests
     Scenario: trac #2797
         When sending json search query "Philippstr.4, 52349 Düren" with address
         Then result addresses contain
-         | ID | road           | city
+         | ID | road          | town
          | 0  | Philippstraße | Düren
 
     Scenario: trac #2830
@@ -141,14 +140,14 @@ Feature: API regression tests
     Scenario: trac #2852
         When sending json search query "berlinerstrasse, leipzig" with address
         Then result addresses contain
-         | road
-         | Berliner Straße
+         | ID | road
+         | 0  | Berliner Straße
 
     Scenario: trac #2871
         When looking up coordinates -33.906895553,150.99609375
         Then result addresses contain
          | ID | city       | postcode | country
-         | 0  | Parramatta | 2197     | Australia
+         | 0  | [^0-9]*    | 2197     | Australia
 
     Scenario: trac #2974
         When sending json search query "Azadi Square, Faruj" with address

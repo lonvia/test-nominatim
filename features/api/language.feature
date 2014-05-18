@@ -66,7 +66,7 @@ Feature: Localization of search results
     Scenario: Reverse - default language
         When looking up coordinates 48.13921,11.57328
         Then result addresses contain
-          | ID | county
+          | ID | city
           | 0  | München
 
     Scenario: Reverse - accept-language parameter
@@ -75,7 +75,7 @@ Feature: Localization of search results
           | en,fr
         When looking up coordinates 48.13921,11.57328
         Then result addresses contain
-          | ID | county
+          | ID | city
           | 0  | Munich
 
     Scenario: Reverse - HTTP accept language header
@@ -84,7 +84,7 @@ Feature: Localization of search results
           | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
         When looking up coordinates 48.13921,11.57328
         Then result addresses contain
-          | ID | county
+          | ID | city
           | 0  | Munich
     
     Scenario: Reverse - accept-language parameter and HTTP header
@@ -96,5 +96,5 @@ Feature: Localization of search results
           | fr-ca,fr;q=0.8,en-ca;q=0.5,en;q=0.3
         When looking up coordinates 48.13921,11.57328
         Then result addresses contain
-          | ID | county
+          | ID | city
           | 0  | Monaco di Baviera

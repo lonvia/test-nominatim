@@ -114,7 +114,7 @@ def match_geometry(coord, matchstring):
             elif m.group(4) == 'km':
                 pass
             else:
-                assert (False, "Unknown unit '%s' in geometry match" % (m.group(4), ))
+                raise Exception("Unknown unit '%s' in geometry match" % (m.group(4), ))
     else:
         expdist = 0
 
