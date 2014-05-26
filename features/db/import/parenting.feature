@@ -2,6 +2,32 @@
 Feature: Parenting of objects
     Tests that the correct parent is choosen
 
+    Scenario: Address inherits postcode from its street unless it has a postcode
+        Given the scene roads-with-pois
+        And the place nodes
+         | osm_id | class | type  | housenumber | geometry
+         | 1      | place | house | 4           | :p-N1
+        And the place nodes
+         | osm_id | class | type  | housenumber | postcode | geometry
+         | 2      | place | house | 5           | 99999    | :p-N1
+        And the place ways
+         | osm_id | class   | type        | name  | postcode | geometry
+         | 1      | highway | residential | galoo | 12345    | :w-north
+        When importing
+        Then table placex contains
+         | object | parent_place_id
+         | N1     | W1
+         | N2     | W1
+        When sending query "4 galoo"
+        Then results contain
+         | ID | osm_type | osm_id | langaddress
+         | 0  | N        | 1      | 4, galoo, 12345
+        When sending query "5 galoo"
+        Then results contain
+         | ID | osm_type | osm_id | langaddress
+         | 0  | N        | 2      | 5, galoo, 99999
+
+
     Scenario: Address without tags, closest street
         Given the scene roads-with-pois
         And the place nodes
