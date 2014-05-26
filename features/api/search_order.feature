@@ -11,7 +11,7 @@ Feature: Result order for Geocoding
         | type   | city            | street
         | city   | Zürich          | Rigistr
         | city   | Karlsruhe       | Sophienstr
-        | county | München         | Karlstr
+        | city   | München         | Karlstr
         | city   | Praha           | Dlouhá
 
     Scenario Outline: use more important city in street search
