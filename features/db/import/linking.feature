@@ -35,7 +35,7 @@ Feature: Linking of places
          | R        | 2      | waterway | river | Limmat| :w-4a
         And the relations
          | id | members                          | tags
-         | 13 | R2                               | 'type' : 'waterway'
+         | 1  | R2                               | 'type' : 'waterway'
         When importing
         Then table placex contains
          | object | linked_place_id
@@ -43,6 +43,19 @@ Feature: Linking of places
          | W2     | None
          | R1     | None
          | R2     | None
+
+    Scenario: Empty waterway relations are handled correctly
+        Given the scene split-road
+        And the place ways
+         | osm_type | osm_id | class    | type  | name  | geometry
+         | R        | 1      | waterway | river | Rhein | :w-1 + :w-2 + :w-3
+        And the relations
+         | id | members                          | tags
+         | 1 |                                  | 'type' : 'waterway'
+        When importing
+        Then table placex contains
+         | object | linked_place_id
+         | R1     | None
 
     Scenario: Waterways are not linked when in non-waterway relations
         Given the scene split-road

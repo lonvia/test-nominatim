@@ -165,18 +165,21 @@ def import_fill_planet_osm_rels(step):
     for line in step.hashes:
         members = []
         parts = { 'n' : [], 'w' : [], 'r' : [] }
-        for mem in line['members'].split(','):
-            memparts = mem.strip().split(':', 2)
-            memid = memparts[0].lower()
-            parts[memid[0]].append(int(memid[1:]))
-            members.append(memid)
-            if len(memparts) == 2:
-                members.append(memparts[1])
-            else:
-                members.append('')
+        if line['members'].strip():
+            for mem in line['members'].split(','):
+                memparts = mem.strip().split(':', 2)
+                memid = memparts[0].lower()
+                parts[memid[0]].append(int(memid[1:]))
+                members.append(memid)
+                if len(memparts) == 2:
+                    members.append(memparts[1])
+                else:
+                    members.append('')
         tags = []
         for k,v in world.make_hash(line['tags']).iteritems():
             tags.extend((k,v))
+        if not members:
+            members = None
 
         cur.execute("""INSERT INTO planet_osm_rels 
                       (id, way_off, rel_off, parts, members, tags, pending)
