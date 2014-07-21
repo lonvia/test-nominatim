@@ -57,7 +57,7 @@ Feature: Linking of places
          | object | linked_place_id
          | R1     | None
 
-    Scenario: Waterways are not linked when in non-waterway relations
+    Scenario: Waterways are not linked when waterway types don't match
         Given the scene split-road
         And the place ways
          | osm_type | osm_id | class    | type     | name  | geometry
@@ -77,19 +77,21 @@ Feature: Linking of places
           |  0 | R
           |  1 | W
 
-    Scenario: Waterways are not linked when in waterway relations is a side stream
+    Scenario: Side streams are linked only when they have the same name
         Given the scene split-road
         And the place ways
          | osm_type | osm_id | class    | type  | name   | geometry
          | W        | 1      | waterway | river | Rhein2 | :w-2
+         | W        | 2      | waterway | river | Rhein  | :w-3
          | R        | 1      | waterway | river | Rhein  | :w-1 + :w-2 + :w-3
         And the relations
-         | id | members            | tags
-         | 1  | W1:side_stream     | 'type' : 'waterway'
+         | id | members                           | tags
+         | 1  | W1:side_stream,W2:side_stream     | 'type' : 'waterway'
         When importing
         Then table placex contains
          | object | linked_place_id
          | W1     | None
+         | W2     | R1
         When sending query "rhein2"
         Then results contain
          | osm_type
