@@ -23,6 +23,6 @@ Feature: Creation of search terms
          | osm_id | class   | type        | name     | geometry
          | 1      | highway | residential | the road | :w-north
         When importing
-        Then table search_name contains
+        Then search_name table contains
          | place_id | name_vector | nameaddress_vector
          | N1       | foo         | the road

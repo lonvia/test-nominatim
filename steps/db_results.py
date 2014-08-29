@@ -34,12 +34,15 @@ def check_placex_names(step, osmtyp, osmid):
 
 
 
-@step(u'table placex contains$')
-def check_placex_content(step):
+@step(u'table ([a-z_]+) contains$')
+def check_placex_content(step, tablename):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
         osmtype, osmid, cls = world.split_id(line['object'])
-        q = 'SELECT *, ST_X(centroid) as clat, ST_Y(centroid) as clon FROM placex where osm_type = %s and osm_id = %s'
+        q = 'SELECT *'
+        if tablename == 'placex':
+            q = q + ", ST_X(centroid) as clat, ST_Y(centroid) as clon"
+        q = q + ' FROM %s where osm_type = %%s and osm_id = %%s' % (tablename,)
         if cls is None:
             params = (osmtype, osmid)
         else:
@@ -69,7 +72,7 @@ def check_placex_missing(step, osmtyp, osmid):
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 
-@step(u'table search_name contains$')
+@step(u'search_name table contains$')
 def check_search_name_content(step):
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
