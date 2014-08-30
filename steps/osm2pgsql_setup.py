@@ -44,7 +44,7 @@ def osm2pgsql_import_nodes(step):
         if 'tags' in node:
             node['tags'] = world.make_hash(line['tags'])
         else:
-            node['tags'] = None
+            node['tags'] = {}
 
         world.osm2pgsql.append(node)
 
@@ -68,6 +68,38 @@ def osm2pgsql_import_ways(step):
 
         world.osm2pgsql.append(way)
 
+membertype = { 'N' : 'node', 'W' : 'way', 'R' : 'relation' }
+
+@step(u'the osm relations:')
+def osm2pgsql_import_rels(step):
+    """ Define a list of OSM relation to be imported.
+    """
+    for line in step.hashes:
+        rel = { 'type' : 'R', 'version' : '1', 'timestamp': "2012-05-01T15:06:20Z",  
+                 'changeset' : "11470653", 'uid' : "122294", 'user' : "foo"
+               }
+        rel.update(line)
+
+        rel['id'] = int(rel['id'])
+        if 'tags' in rel:
+            rel['tags'] = world.make_hash(line['tags'])
+        else:
+            rel['tags'] = {}
+        members = []
+        if rel['members'].strip():
+            for mem in line['members'].split(','):
+                memparts = mem.strip().split(':', 2)
+                memid = memparts[0].upper()
+                members.append((membertype[memid[0]], 
+                                memid[1:], 
+                                memparts[1] if len(memparts) == 2 else ''
+                              ))
+        rel['members'] = members
+
+        world.osm2pgsql.append(rel)
+
+
+
 def _sort_xml_entries(x, y):
     if x['type'] == y['type']:
         return cmp(x['id'], y['id'])
@@ -88,12 +120,16 @@ def write_osm_obj(fd, obj):
         fd.write('<way id="%(id)d" version="%(version)s" changeset="%(changeset)s" timestamp="%(timestamp)s" user="%(user)s" uid="%(uid)s">\n' % obj)
         for nd in obj['nodes']:
             fd.write('<nd ref="%s" />\n' % (nd,))
-        if obj['tags'] is not None:
-            for k,v in obj['tags'].iteritems():
-                fd.write('  <tag k="%s" v="%s"/>\n' % (k, v))
+        for k,v in obj['tags'].iteritems():
+            fd.write('  <tag k="%s" v="%s"/>\n' % (k, v))
         fd.write('</way>\n')
     elif obj['type'] == 'R':
-        pass
+        fd.write('<relation id="%(id)d" version="%(version)s" changeset="%(changeset)s" timestamp="%(timestamp)s" user="%(user)s" uid="%(uid)s">\n' % obj)
+        for mem in obj['members']:
+            fd.write('  <member type="%s" ref="%s" role="%s"/>\n' % mem)
+        for k,v in obj['tags'].iteritems():
+            fd.write('  <tag k="%s" v="%s"/>\n' % (k, v))
+        fd.write('</relation>\n')
 
 @step(u'loading osm data')
 def osm2pgsql_load_place(step):
