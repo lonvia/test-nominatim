@@ -34,9 +34,12 @@ def osm2pgsql_import_nodes(step):
                }
         node.update(line)
         node['id'] = int(node['id'])
-        if not 'lon' in node:
+        if 'geometry' in node:
+            lat, lon = node['geometry'].split(' ')
+            node['lat'] = float(lat)
+            node['lon'] = float(lon)
+        else:
             node['lon'] = random.random()*360 - 180
-        if not 'lat' in node:
             node['lat'] = random.random()*180 - 90
         if 'tags' in node:
             node['tags'] = world.make_hash(line['tags'])
@@ -44,6 +47,26 @@ def osm2pgsql_import_nodes(step):
             node['tags'] = None
 
         world.osm2pgsql.append(node)
+
+
+@step(u'the osm ways:')
+def osm2pgsql_import_ways(step):
+    """ Define a list of OSM ways to be imported.
+    """
+    for line in step.hashes:
+        way = { 'type' : 'W', 'version' : '1', 'timestamp': "2012-05-01T15:06:20Z",  
+                 'changeset' : "11470653", 'uid' : "122294", 'user' : "foo"
+               }
+        way.update(line)
+
+        way['id'] = int(way['id'])
+        if 'tags' in way:
+            way['tags'] = world.make_hash(line['tags'])
+        else:
+            way['tags'] = None
+        way['nodes'] = way['nodes'].strip().split()
+
+        world.osm2pgsql.append(way)
 
 def _sort_xml_entries(x, y):
     if x['type'] == y['type']:
@@ -62,7 +85,13 @@ def write_osm_obj(fd, obj):
                 fd.write('  <tag k="%s" v="%s"/>\n' % (k, v))
             fd.write('</node>\n')
     elif obj['type'] == 'W':
-        pass
+        fd.write('<way id="%(id)d" version="%(version)s" changeset="%(changeset)s" timestamp="%(timestamp)s" user="%(user)s" uid="%(uid)s">\n' % obj)
+        for nd in obj['nodes']:
+            fd.write('<nd ref="%s" />\n' % (nd,))
+        if obj['tags'] is not None:
+            for k,v in obj['tags'].iteritems():
+                fd.write('  <tag k="%s" v="%s"/>\n' % (k, v))
+        fd.write('</way>\n')
     elif obj['type'] == 'R':
         pass
 
