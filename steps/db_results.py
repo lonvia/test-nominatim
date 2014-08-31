@@ -15,8 +15,10 @@ import subprocess
 import random
 import json
 import re
+import logging
 from collections import OrderedDict
 
+logger = logging.getLogger(__name__)
 
 @step(u'table placex contains as names for (N|R|W)(\d+)')
 def check_placex_names(step, osmtyp, osmid):
@@ -36,6 +38,11 @@ def check_placex_names(step, osmtyp, osmid):
 
 @step(u'table ([a-z_]+) contains$')
 def check_placex_content(step, tablename):
+    """ check that the given lines are in the given table
+        Entries are searched by osm_type/osm_id and then all
+        given columns are tested. If there is more than one
+        line for an OSM object, they must match in these columns.
+    """
     cur = world.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     for line in step.hashes:
         osmtype, osmid, cls = world.split_id(line['object'])
@@ -65,10 +72,15 @@ def check_placex_content(step, tablename):
                     else:
                         assert_equals(str(res[k]), v, "Results for '%s'/'%s' differ: '%s' != '%s'" % (line['object'], k, str(res[k]), v))
 
-@step(u'table placex has no entry for (N|R|W)(\d+)')
-def check_placex_missing(step, osmtyp, osmid):
+@step(u'table (placex?) has no entry for (N|R|W)(\d+)(:\w+)?')
+def check_placex_missing(step, tablename, osmtyp, osmid, placeclass):
     cur = world.conn.cursor()
-    cur.execute('SELECT count(*) FROM placex where osm_type = %s and osm_id =%s', (osmtyp, int(osmid)))
+    q = 'SELECT count(*) FROM %s where osm_type = %%s and osm_id = %%s' % (tablename, )
+    args = [osmtyp, int(osmid)]
+    if placeclass is not None:
+        q = q + ' and class = %s'
+        args.append(placeclass[1:])
+    cur.execute(q, args)
     numres = cur.fetchone()[0]
     assert_equals (numres, 0)
 

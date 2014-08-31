@@ -29,3 +29,12 @@ Feature: Import of simple objects by osm2pgsql
           | W1     | shop    | toys   | 'name' : 'tata'
           | R1     | tourism | hotel  | 'name' : 'XZ'
 
+     Scenario: Import object with two main tags
+        Given the osm nodes:
+          | id | tags
+          | 1  | 'tourism' : 'hotel', 'amenity' : 'restaurant', 'name' : 'foo'
+        When loading osm data
+        Then table place contains
+          | object     | class   | type       | name
+          | N1:tourism | tourism | hotel      | 'name' : 'foo'
+          | N1:amenity | amenity | restaurant | 'name' : 'foo'
