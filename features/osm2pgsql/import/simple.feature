@@ -38,3 +38,12 @@ Feature: Import of simple objects by osm2pgsql
           | object     | class   | type       | name
           | N1:tourism | tourism | hotel      | 'name' : 'foo'
           | N1:amenity | amenity | restaurant | 'name' : 'foo'
+
+     Scenario: Import stand-alone house number with postcode
+        Given the osm nodes:
+          | id | tags
+          | 1  | 'addr:housenumber' : '4', 'addr:postcode' : '3345'
+        When loading osm data
+        Then table place contains
+          | object | class | type
+          | N1     | place | house

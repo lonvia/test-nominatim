@@ -158,6 +158,16 @@ def osm2pgsql_load_place(step):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (outp, outerr) = proc.communicate()
     assert (proc.returncode == 0), "OSM data import failed:\n%s\n%s\n" % (outp, outerr)
+
+    ### reintroduce the triggers/indexes we've lost by having osm2pgsql set up place again
+    cur = world.conn.cursor()
+    cur.execute("""CREATE TRIGGER place_before_delete BEFORE DELETE ON place
+                    FOR EACH ROW EXECUTE PROCEDURE place_delete()""")
+    cur.execute("""CREATE TRIGGER place_before_insert BEFORE INSERT ON place
+                   FOR EACH ROW EXECUTE PROCEDURE place_insert()""")
+    cur.execute("""CREATE UNIQUE INDEX idx_place_osm_unique on place using btree(osm_id,osm_type,class,type)""")
+    world.conn.commit()
+
         
     os.remove(fname)
     world.osm2pgsql = []
@@ -174,11 +184,6 @@ def osm2pgsql_update_place(step):
     cur.execute("""insert into placex (osm_type, osm_id, class, type, name, admin_level,
 			       housenumber, street, addr_place, isin, postcode, country_code, extratags,
 			       geometry) select * from place""")
-    ### reintroduce the triggers we've lost by having osm2pgsql set up place again
-    cur.execute("""CREATE TRIGGER place_before_delete BEFORE DELETE ON place
-                    FOR EACH ROW EXECUTE PROCEDURE place_delete()""")
-    cur.execute("""CREATE TRIGGER place_before_insert BEFORE INSERT ON place
-                   FOR EACH ROW EXECUTE PROCEDURE place_insert()""")
     world.conn.commit()
     world.run_nominatim_script('setup', 'index', 'index-noanalyse')
     world.run_nominatim_script('setup', 'create-functions', 'create-partition-functions', 'enable-diff-updates')

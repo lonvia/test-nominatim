@@ -24,7 +24,6 @@ Feature: Structured search queries
           | 22547
 
 
-
     Scenario: Street, postcode and country
         When sending xml structured query with address
           | street          | postalcode | country
@@ -33,3 +32,10 @@ Feature: Structured search queries
         Then result header contains
           | attr        | value
           | querystring | Old Palace Road, GU2 7UP, United Kingdom
+
+
+    Scenario: gihub #176
+        When sending json structured query with address
+          | city
+          | Washington
+        Then at least 1 result is returned

@@ -1,6 +1,7 @@
 Feature: API regression tests
     Tests error cases reported in tickets.
 
+    @poldi-only
     Scenario Outline: github #36
         When sending json search query "<query>" with address
         Then result addresses contain
