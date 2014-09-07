@@ -1,3 +1,6 @@
+**This project has now been integrated into the main Nominatim
+repository and is no longer maintained.**
+
 Simple functional tests for the Nominatim API as well as import 
 and export.
 
